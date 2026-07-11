@@ -31,18 +31,8 @@ struct ReaderView: View {
             .frame(maxWidth: maxContentWidth, alignment: .leading)
             .padding(.horizontal, DesignSystem.readerHorizontalPadding)
             .padding(.vertical, DesignSystem.readerVerticalPadding)
-            .background(
-                RoundedRectangle(cornerRadius: DesignSystem.documentCornerRadius)
-                    .fill(palette.documentSurface)
-                    .shadow(color: palette.cardShadow, radius: 18, y: 8)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: DesignSystem.documentCornerRadius)
-                    .stroke(palette.subtleBorder, lineWidth: 1)
-            )
-            .padding(.horizontal, outerHorizontalPadding)
-            .padding(.vertical, 28)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(palette.documentSurface)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

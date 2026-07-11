@@ -2,6 +2,11 @@ import SwiftUI
 
 struct FolderTabBarView: View {
     @EnvironmentObject var workspaceViewModel: WorkspaceViewModel
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var palette: DesignPalette {
+        DesignSystem.palette(for: colorScheme)
+    }
     
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -15,7 +20,7 @@ struct FolderTabBarView: View {
                 }) {
                     Image(systemName: "plus")
                         .padding(6)
-                        .background(Color.secondary.opacity(0.1))
+                        .background(palette.toolbarControlBackground)
                         .cornerRadius(6)
                 }
                 .buttonStyle(.plain)
@@ -24,8 +29,8 @@ struct FolderTabBarView: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
         }
-        .background(Color(nsColor: .windowBackgroundColor))
-        .overlay(Divider(), alignment: .bottom)
+        .background(palette.appBackground)
+        .overlay(Divider().opacity(0.5), alignment: .bottom)
     }
     
     @ViewBuilder
@@ -34,10 +39,11 @@ struct FolderTabBarView: View {
         
         HStack(spacing: 6) {
             Image(systemName: "folder")
-                .foregroundColor(.blue)
+                .foregroundColor(isSelected ? palette.primaryText : palette.mutedText)
             
             Text(tab.title)
-                .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+                .font(.system(size: 13, weight: isSelected ? .medium : .regular))
+                .foregroundColor(isSelected ? palette.primaryText : palette.secondaryText)
                 .lineLimit(1)
                 .truncationMode(.tail)
                 .frame(maxWidth: 150)
@@ -47,7 +53,7 @@ struct FolderTabBarView: View {
             }) {
                 Image(systemName: "xmark")
                     .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(isSelected ? .primary : .secondary)
+                    .foregroundColor(isSelected ? palette.secondaryText : palette.mutedText)
                     .padding(4)
                     .background(Color.primary.opacity(0.01))
             }
@@ -64,11 +70,11 @@ struct FolderTabBarView: View {
         .padding(.vertical, 6)
         .background(
             RoundedRectangle(cornerRadius: 6)
-                .fill(isSelected ? Color.accentColor.opacity(0.2) : Color.clear)
+                .fill(isSelected ? palette.documentSurface : Color.clear)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 6)
-                .stroke(isSelected ? Color.accentColor.opacity(0.5) : Color.clear, lineWidth: 1)
+                .stroke(isSelected ? palette.border : Color.clear, lineWidth: 1)
         )
         .contentShape(Rectangle())
         .onTapGesture {

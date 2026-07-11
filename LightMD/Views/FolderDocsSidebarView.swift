@@ -26,7 +26,7 @@ struct FolderDocsSidebarView: View {
         .padding(.vertical, 14)
         .frame(width: 220)
         .frame(maxHeight: .infinity, alignment: .top)
-        .background(.thinMaterial)
+        .background(palette.appBackground)
         .onAppear {
             expandRootNodes()
         }
@@ -99,7 +99,7 @@ struct FolderDocsSidebarView: View {
                 HStack(spacing: 7) {
                     Image(systemName: "doc.text")
                         .font(.system(size: 12))
-                        .foregroundStyle(isSelected(node) ? Color.accentColor : palette.mutedText)
+                        .foregroundStyle(isSelected(node) ? palette.primaryText : palette.mutedText)
                         .frame(width: 16)
 
                     Text(node.name)
@@ -114,8 +114,8 @@ struct FolderDocsSidebarView: View {
                 .padding(.horizontal, 7)
                 .padding(.vertical, 7)
                 .background(
-                    RoundedRectangle(cornerRadius: 7)
-                        .fill(isSelected(node) ? Color.accentColor.opacity(0.12) : Color.clear)
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(isSelected(node) ? palette.toolbarControlBackground : Color.clear)
                 )
             }
             .buttonStyle(.plain)

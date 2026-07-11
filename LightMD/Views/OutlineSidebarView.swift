@@ -30,9 +30,9 @@ struct OutlineSidebarView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 14)
-        .frame(width: 250)
+        .frame(width: 220)
         .frame(maxHeight: .infinity, alignment: .top)
-        .background(.thinMaterial)
+        .background(palette.appBackground)
         .overlay(alignment: .leading) {
             Rectangle()
                 .fill(palette.border)

@@ -31,17 +31,12 @@ struct EditorView: View {
             .font(MarkdownStyle.editorFont)
             .foregroundStyle(palette.primaryText)
             .scrollContentBackground(.hidden)
-            .padding(24)
-            .background(palette.editorSurface)
+            .padding(.horizontal, DesignSystem.readerHorizontalPadding)
+            .padding(.vertical, DesignSystem.readerVerticalPadding)
             .frame(maxWidth: DesignSystem.editorMaxWidth)
-            .overlay(
-                RoundedRectangle(cornerRadius: DesignSystem.documentCornerRadius)
-                    .stroke(viewModel.isDocumentEdited ? Color.accentColor.opacity(0.32) : palette.subtleBorder, lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: DesignSystem.documentCornerRadius))
-            .shadow(color: palette.cardShadow, radius: 14, y: 7)
-            .padding(.horizontal, 30)
-            .padding(.vertical, 28)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(palette.editorSurface)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }

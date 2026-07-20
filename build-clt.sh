@@ -82,6 +82,8 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
   <string>LightMD</string>
   <key>CFBundleExecutable</key>
   <string>LightMD</string>
+  <key>CFBundleIconFile</key>
+  <string>AppIcon</string>
   <key>CFBundleIdentifier</key>
   <string>com.local.lightmd</string>
   <key>CFBundleInfoDictionaryVersion</key>
@@ -105,6 +107,10 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
 PLIST
 
 printf 'APPL????' > "$CONTENTS_DIR/PkgInfo"
+
+if [ -f "$PROJECT_DIR/LightMD/Resources/AppIcon.icns" ]; then
+  cp "$PROJECT_DIR/LightMD/Resources/AppIcon.icns" "$RESOURCES_DIR/AppIcon.icns"
+fi
 
 if command -v codesign > /dev/null; then
   codesign --force --deep --sign - "$APP_DIR" > /dev/null

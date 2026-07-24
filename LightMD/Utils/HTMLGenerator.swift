@@ -429,8 +429,11 @@ enum HTMLGenerator {
         let options = AttributedString.MarkdownParsingOptions(
             interpretedSyntax: .inlineOnlyPreservingWhitespace
         )
+        // 한국어에서 잦은 물결(~) 사용으로 인한 원치 않는 취소선 렌더링 방지
+        let escapedText = text.replacingOccurrences(of: "~", with: "\\~")
+        
         do {
-            let attributed = try AttributedString(markdown: text, options: options)
+            let attributed = try AttributedString(markdown: escapedText, options: options)
             var html = ""
             for run in attributed.runs {
                 let textRun = String(attributed[run.range].characters)

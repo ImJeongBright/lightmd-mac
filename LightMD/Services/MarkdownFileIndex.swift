@@ -6,9 +6,13 @@ final class MarkdownFileIndex: ObservableObject {
     private var filesByNormalizedName: [String: [URL]] = [:]
     private var filesByRelativePath: [String: URL] = [:]
     
+    // Backlink index: for each target file URL, which source file URLs link to it
+    private var backlinksByTargetURL: [URL: Set<URL>] = [:]
+    
     func rebuild(rootFolderURL: URL, markdownFiles: [FolderDocument]) {
         filesByNormalizedName.removeAll()
         filesByRelativePath.removeAll()
+        backlinksByTargetURL.removeAll()
         
         for doc in markdownFiles {
             let url = doc.url.standardizedFileURL
@@ -33,13 +37,60 @@ final class MarkdownFileIndex: ObservableObject {
             filesByNormalizedName[name, default: []].append(url)
         }
         
+        // 3. Build backlink index by scanning all files for WikiLinks
+        buildBacklinkIndex(rootFolderURL: rootFolderURL, markdownFiles: markdownFiles)
+        
         isReady = true
+    }
+    
+    private func buildBacklinkIndex(rootFolderURL: URL, markdownFiles: [FolderDocument]) {
+        let wikiLinkPattern = try? NSRegularExpression(pattern: "\\[\\[([^\\]]+)\\]\\]", options: [])
+        
+        for doc in markdownFiles {
+            let sourceURL = doc.url.standardizedFileURL
+            guard let content = try? String(contentsOf: sourceURL, encoding: .utf8) else { continue }
+            
+            let nsContent = content as NSString
+            let range = NSRange(location: 0, length: nsContent.length)
+            let matches = wikiLinkPattern?.matches(in: content, options: [], range: range) ?? []
+            
+            for match in matches {
+                guard let captureRange = Range(match.range(at: 1), in: content) else { continue }
+                var target = String(content[captureRange])
+                
+                // Handle aliases: [[Target|Alias]] -> use Target
+                if let pipeIdx = target.firstIndex(of: "|") {
+                    target = String(target[..<pipeIdx])
+                }
+                
+                // Handle anchors: [[Target#Heading]] -> use Target
+                if let hashIdx = target.firstIndex(of: "#") {
+                    target = String(target[..<hashIdx])
+                }
+                
+                target = target.trimmingCharacters(in: .whitespacesAndNewlines)
+                if target.isEmpty { continue }
+                
+                // Resolve the target
+                if let resolvedURL = resolveWikiLink(target: target, currentFileURL: sourceURL) {
+                    backlinksByTargetURL[resolvedURL, default: []].insert(sourceURL)
+                }
+            }
+        }
     }
     
     func clear() {
         filesByNormalizedName.removeAll()
         filesByRelativePath.removeAll()
+        backlinksByTargetURL.removeAll()
         isReady = false
+    }
+    
+    /// Returns all files that link to the given file URL via WikiLinks
+    func backlinks(for fileURL: URL) -> [URL] {
+        let standardized = fileURL.standardizedFileURL
+        return Array(backlinksByTargetURL[standardized] ?? [])
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
     }
     
     func debugRelativePathCount() -> Int {

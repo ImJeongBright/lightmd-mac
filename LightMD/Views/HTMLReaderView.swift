@@ -27,6 +27,9 @@ struct HTMLReaderView: NSViewRepresentable {
         ucc.add(context.coordinator, name: "annotationClicked")
         ucc.add(context.coordinator, name: "debugLog")
         ucc.add(context.coordinator, name: "contextMenuAction")
+        ucc.add(context.coordinator, name: "scrollPosition")
+        ucc.add(context.coordinator, name: "wikiLinkHover")
+        ucc.add(context.coordinator, name: "wikiLinkHoverEnd")
         config.userContentController = ucc
 
         let webView = WKWebView(frame: .zero, configuration: config)
@@ -60,16 +63,6 @@ struct HTMLReaderView: NSViewRepresentable {
         if context.coordinator.lastAppearance != currentAppearance {
             context.coordinator.lastAppearance = currentAppearance
             let cssVars = HTMLGenerator.generateCSSVars(for: currentAppearance)
-            let escapedCSS = cssVars.replacingOccurrences(of: "`", with: "\\`")
-            let js = """
-            var styleEl = document.getElementById('lightmd-theme-vars');
-            if (styleEl) {
-                styleEl.innerHTML = `\\(escapedCSS)`;
-            }
-            """
-            // Using \ (escapedCSS) inside Swift string interpolation evaluates to the string contents.
-            // But we want JavaScript template literal to contain it. 
-            // So we inject it normally, but ensure it doesn't break JS syntax.
             let safeJS = "var styleEl = document.getElementById('lightmd-theme-vars'); if (styleEl) { styleEl.innerHTML = `" + cssVars.replacingOccurrences(of: "`", with: "\\`") + "`; }"
             webView.evaluateJavaScript(safeJS, completionHandler: nil)
         }
@@ -206,6 +199,10 @@ struct HTMLReaderView: NSViewRepresentable {
                 webView.evaluateJavaScript(
                     "var el=document.getElementById('\(req.headingID)');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});",
                     completionHandler: nil)
+            } else if let offset = parent.viewModel.savedScrollOffset {
+                webView.evaluateJavaScript(
+                    "window.scrollTo({top: \(offset), behavior: 'auto'});",
+                    completionHandler: nil)
             } else if let h = parent.viewModel.activeHeadingID {
                 webView.evaluateJavaScript(
                     "var el=document.getElementById('\(h)');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});",
@@ -326,6 +323,30 @@ struct HTMLReaderView: NSViewRepresentable {
                     print("[WebView] \(msg)")
                 }
 
+            case "scrollPosition":
+                if let dict = message.body as? [String: Any],
+                   let offset = dict["offset"] as? Double {
+                    DispatchQueue.main.async {
+                        self.parent.viewModel.updateScrollOffset(offset)
+                    }
+                }
+
+            case "wikiLinkHover":
+                if let dict = message.body as? [String: Any],
+                   let urlStr = dict["url"] as? String,
+                   let url = URL(string: urlStr),
+                   let x = dict["x"] as? CGFloat,
+                   let y = dict["y"] as? CGFloat {
+                    DispatchQueue.main.async {
+                        self.showWikiLinkPreview(url: url, at: CGPoint(x: x, y: y))
+                    }
+                }
+            
+            case "wikiLinkHoverEnd":
+                DispatchQueue.main.async {
+                    WikiLinkPreviewPanel.shared.hide()
+                }
+
             default:
                 break
             }
@@ -335,6 +356,52 @@ struct HTMLReaderView: NSViewRepresentable {
             if let url = sender.representedObject as? URL {
                 parent.viewModel.openInRightPane(url)
             }
+        }
+        
+        private func showWikiLinkPreview(url: URL, at point: CGPoint) {
+            guard self.webView != nil else { return }
+            
+            // Resolve URL from WikiLink scheme
+            var resolvedURL: URL? = nil
+            if url.scheme == "lightmd-wikilink" {
+                var rawTarget = url.absoluteString
+                if rawTarget.hasPrefix("lightmd-wikilink://") {
+                    rawTarget = String(rawTarget.dropFirst("lightmd-wikilink://".count))
+                } else if rawTarget.hasPrefix("lightmd-wikilink:") {
+                    rawTarget = String(rawTarget.dropFirst("lightmd-wikilink:".count))
+                }
+                // Strip anchor
+                if let hashIdx = rawTarget.firstIndex(of: "#") {
+                    rawTarget = String(rawTarget[..<hashIdx])
+                }
+                let targetPath = rawTarget.removingPercentEncoding ?? rawTarget
+                resolvedURL = parent.viewModel.fileIndex.resolveWikiLink(target: targetPath, currentFileURL: parent.viewModel.document?.url)
+            } else {
+                resolvedURL = url
+            }
+            
+            guard let fileURL = resolvedURL,
+                  let content = try? String(contentsOf: fileURL, encoding: .utf8) else { return }
+            
+            let title = fileURL.deletingPathExtension().lastPathComponent
+            // Extract first ~600 chars as preview
+            let stripped = content
+                .replacingOccurrences(of: #"#+\s+"#, with: "", options: .regularExpression)
+                .replacingOccurrences(of: #"\*\*(.+?)\*\*"#, with: "$1", options: .regularExpression)
+                .replacingOccurrences(of: #"\[(.+?)\]\(.+?\)"#, with: "$1", options: .regularExpression)
+                .replacingOccurrences(of: "[[", with: "")
+                .replacingOccurrences(of: "]]", with: "")
+            let preview = String(stripped.prefix(600))
+            
+            let mouseLoc = NSEvent.mouseLocation
+            
+            WikiLinkPreviewPanel.shared.show(
+                content: preview,
+                title: title,
+                at: mouseLoc,
+                appearance: parent.appearance,
+                colorScheme: .light // We'll handle colorScheme via appearance
+            )
         }
 
         private func applyColorToSelection(_ hex: String) {

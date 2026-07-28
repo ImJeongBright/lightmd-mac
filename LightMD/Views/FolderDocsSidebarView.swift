@@ -77,6 +77,12 @@ struct FolderDocsSidebarView: View {
                             .truncationMode(.middle)
 
                         Spacer(minLength: 0)
+                        
+                        if node.gitStatus != .normal {
+                            Circle()
+                                .fill(Color.orange.opacity(0.8))
+                                .frame(width: 6, height: 6)
+                        }
                     }
                     .padding(.leading, CGFloat(level) * 12)
                     .padding(.horizontal, 7)
@@ -115,6 +121,8 @@ struct FolderDocsSidebarView: View {
                         .truncationMode(.middle)
 
                     Spacer(minLength: 0)
+                    
+                    gitStatusBadge(for: node.gitStatus)
                 }
                 .padding(.leading, CGFloat(level) * 12 + 18)
                 .padding(.horizontal, 7)
@@ -167,5 +175,27 @@ struct FolderDocsSidebarView: View {
 
             return [node.id] + Array(directoryIDs(in: node.children))
         })
+    }
+    
+    @ViewBuilder
+    private func gitStatusBadge(for status: GitStatus) -> some View {
+        if status != .normal {
+            Text(status.rawValue)
+                .font(.system(size: 9, weight: .bold))
+                .foregroundColor(colorForGitStatus(status))
+                .padding(.horizontal, 4)
+                .padding(.vertical, 1)
+                .background(colorForGitStatus(status).opacity(0.15))
+                .cornerRadius(4)
+        }
+    }
+    
+    private func colorForGitStatus(_ status: GitStatus) -> Color {
+        switch status {
+        case .added, .untracked: return Color.green.opacity(0.8)
+        case .modified: return Color.orange.opacity(0.8)
+        case .deleted: return Color.red.opacity(0.8)
+        default: return colors.secondaryText
+        }
     }
 }

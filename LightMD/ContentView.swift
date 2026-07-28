@@ -13,6 +13,7 @@ struct ContentView: View {
 
     @StateObject private var workspaceViewModel: WorkspaceViewModel
     @StateObject private var folderTreeStore = FolderTreeStore()
+    @StateObject private var searchViewModel = SearchViewModel()
     
     let windowRequest: DocumentWindowRequest?
     
@@ -56,6 +57,7 @@ struct ContentView: View {
         .frame(minWidth: DesignSystem.windowMinWidth, minHeight: DesignSystem.windowMinHeight)
         .onAppear {
             viewModel.undoManager = undoManager
+            searchViewModel.inject(workspaceVM: workspaceViewModel, markdownVM: viewModel)
             setupEventMonitor()
             
             // Set default frame
@@ -72,6 +74,7 @@ struct ContentView: View {
         .environmentObject(appearance)
         .environmentObject(workspaceViewModel)
         .environmentObject(folderTreeStore)
+        .environmentObject(searchViewModel)
         .focusedSceneValue(\.markdownViewModel, viewModel)
         .focusedSceneValue(\.workspaceViewModel, workspaceViewModel)
         .navigationTitle(viewModel.windowTitle)
@@ -133,11 +136,42 @@ struct ContentView: View {
                 }
                 
                 if flags == .command {
-                    if event.charactersIgnoringModifiers == "[" || event.keyCode == 33 {
+                    if event.charactersIgnoringModifiers == "p" || event.keyCode == 35 {
+                        searchViewModel.showQuickOpen()
+                        return nil
+                    } else if event.charactersIgnoringModifiers == "[" || event.keyCode == 33 {
                         viewModel.navigateBack()
                         return nil // Consume event
                     } else if event.charactersIgnoringModifiers == "]" || event.keyCode == 30 {
                         viewModel.navigateForward()
+                        return nil
+                    }
+                }
+                
+                if flags == [.command, .shift] {
+                    if event.charactersIgnoringModifiers?.lowercased() == "f" || event.keyCode == 3 {
+                        searchViewModel.showWorkspaceSearch()
+                        return nil
+                    }
+                }
+                
+                if event.keyCode == 53 { // Escape
+                    if searchViewModel.isQuickOpenVisible {
+                        searchViewModel.hideQuickOpen()
+                        return nil
+                    }
+                    if searchViewModel.isWorkspaceSearchVisible {
+                        searchViewModel.hideWorkspaceSearch()
+                        return nil
+                    }
+                }
+                
+                if searchViewModel.isQuickOpenVisible {
+                    if event.keyCode == 126 { // Up arrow
+                        searchViewModel.quickOpenMoveUp()
+                        return nil
+                    } else if event.keyCode == 125 { // Down arrow
+                        searchViewModel.quickOpenMoveDown()
                         return nil
                     }
                 }
@@ -182,6 +216,19 @@ struct ContentView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay {
+            if searchViewModel.isQuickOpenVisible {
+                Color.black.opacity(0.1)
+                    .ignoresSafeArea()
+                    .onTapGesture { searchViewModel.hideQuickOpen() }
+                QuickOpenPanel()
+            } else if searchViewModel.isWorkspaceSearchVisible {
+                Color.black.opacity(0.1)
+                    .ignoresSafeArea()
+                    .onTapGesture { searchViewModel.hideWorkspaceSearch() }
+                WorkspaceSearchPanel()
+            }
+        }
     }
 
     private var workspace: some View {

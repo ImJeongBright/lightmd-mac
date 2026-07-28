@@ -34,6 +34,41 @@ final class AppearanceWindowController: NSObject {
     }
 }
 
+// MARK: - Annotation Library Window Controller (singleton panel)
+
+@MainActor
+final class AnnotationLibraryWindowController: NSObject {
+    static let shared = AnnotationLibraryWindowController()
+    private var window: NSPanel?
+
+    func show(viewModel: MarkdownViewModel, appearance: ReaderAppearanceSettings) {
+        if let window, window.isVisible {
+            window.makeKeyAndOrderFront(nil)
+            return
+        }
+
+        let panel = NSPanel(
+            contentRect: NSRect(x: 0, y: 0, width: 520, height: 600),
+            styleMask: [.titled, .closable, .resizable, .utilityWindow, .nonactivatingPanel],
+            backing: .buffered,
+            defer: false
+        )
+        panel.title = "Annotations"
+        panel.isFloatingPanel = true
+        panel.becomesKeyOnlyIfNeeded = true
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        panel.contentMinSize = NSSize(width: 400, height: 400)
+        panel.contentView = NSHostingView(
+            rootView: AnnotationLibraryView()
+                .environmentObject(viewModel)
+                .environmentObject(appearance)
+        )
+        panel.center()
+        panel.makeKeyAndOrderFront(nil)
+        self.window = panel
+    }
+}
+
 // MARK: - ToolbarView
 
 struct ToolbarView: View {
@@ -103,6 +138,13 @@ struct ToolbarView: View {
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
                         .background(Capsule().fill(colors.hoverBackground))
+                        
+                    if viewModel.documentStatistics.wordCount > 0 {
+                        Text("\(viewModel.documentStatistics.wordCount) words · \(viewModel.documentStatistics.readingTimeMinutes) min")
+                            .font(.caption2)
+                            .foregroundStyle(colors.tertiaryText)
+                            .padding(.leading, 4)
+                    }
                 }
             }
 
@@ -118,8 +160,15 @@ struct ToolbarView: View {
                     viewModel.toggleMode()
                 }
 
-                QuietIconButton(icon: .search, tooltip: "Search") {
+                QuietIconButton(icon: .search, tooltip: "Search (⌘P)") {
                     /* placeholder for search */
+                }
+                
+                QuietIconButton(icon: .bookmark, tooltip: "Annotation Library") {
+                    AnnotationLibraryWindowController.shared.show(
+                        viewModel: viewModel,
+                        appearance: appearance
+                    )
                 }
             }
 

@@ -65,6 +65,7 @@ final class MarkdownViewModel: ObservableObject {
     @Published private(set) var folderMarkdownFiles: [FolderDocument] = []
     @Published private(set) var outlineHeadings: [MarkdownHeading] = []
     @Published private(set) var activeHeadingID: String?
+    @Published private(set) var savedScrollOffset: Double?
     @Published var headingNavigationRequest: HeadingNavigationRequest?
     @Published private(set) var referencePane: ReaderPaneState?
     @Published var selectedBlockID: String?
@@ -78,8 +79,9 @@ final class MarkdownViewModel: ObservableObject {
     @Published var annotationsNeedsReapply: UUID?
     @Published var hasTextSelection: Bool = false
     @Published var annotationApplyRequest: AnnotationApplyRequest?
+    @Published private(set) var documentStatistics = DocumentStatistics.empty
     
-    var fileIndex = MarkdownFileIndex()
+    @Published var fileIndex = MarkdownFileIndex()
     let annotationStore = AnnotationStore()
     var undoManager: UndoManager?
 
@@ -124,6 +126,7 @@ final class MarkdownViewModel: ObservableObject {
 
             currentDocument.text = newValue
             document = currentDocument
+            documentStatistics = DocumentStatistics.calculate(from: newValue)
             refreshOutline()
         }
     }
@@ -467,6 +470,12 @@ final class MarkdownViewModel: ObservableObject {
         saveSidecarMetadata()
         objectWillChange.send()
     }
+    
+    func updateScrollOffset(_ offset: Double) {
+        savedScrollOffset = offset
+        sidecarMetadata.scrollOffset = offset
+        saveSidecarMetadata()
+    }
 
     func isFavoriteHeading(_ heading: MarkdownHeading) -> Bool {
         sidecarMetadata.favoriteHeadingIDs.contains(heading.id)
@@ -612,6 +621,7 @@ final class MarkdownViewModel: ObservableObject {
         do {
             let text = try FileLoader.readMarkdown(from: url)
             document = MarkdownDocument(url: url, text: text)
+            documentStatistics = DocumentStatistics.calculate(from: text)
             mode = .reader
             selectedBlockID = nil
             rememberRecentFile(url)
@@ -655,16 +665,20 @@ final class MarkdownViewModel: ObservableObject {
         folderMonitor?.stop()
         folderMonitor = FolderMonitor(url: url)
         folderMonitor?.folderDidChange = { [weak self, weak store] in
-            // Debounce the reload
-            self?.folderReloadTimer?.invalidate()
-            self?.folderReloadTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { _ in
-                store?.refreshTree(for: url)
-                if let tabID = self?.lastSyncedTabID {
-                    // Update our view of the tree
-                    self?.fileTree = store?.tree(for: url) ?? []
-                    self?.folderMarkdownFiles = store?.files(for: url) ?? []
-                    if let idx = store?.index(for: url) {
-                        self?.fileIndex = idx
+            Task { @MainActor in
+                // Debounce the reload
+                self?.folderReloadTimer?.invalidate()
+                self?.folderReloadTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { _ in
+                    Task { @MainActor in
+                        store?.refreshTree(for: url)
+                        if self?.lastSyncedTabID != nil {
+                            // Update our view of the tree
+                            self?.fileTree = store?.tree(for: url) ?? []
+                            self?.folderMarkdownFiles = store?.files(for: url) ?? []
+                            if let idx = store?.index(for: url) {
+                                self?.fileIndex = idx
+                            }
+                        }
                     }
                 }
             }
@@ -749,6 +763,7 @@ final class MarkdownViewModel: ObservableObject {
         sidecarMetadata.lastOpenedAt = Date()
         sidecarMetadata.lastViewedAt = Date()
         annotationStore.load(sidecarMetadata.annotations)
+        savedScrollOffset = sidecarMetadata.scrollOffset
 
         if let savedHeadingID = sidecarMetadata.lastReadHeadingID,
            outlineHeadings.contains(where: { $0.id == savedHeadingID }) {
@@ -1047,13 +1062,15 @@ final class MarkdownViewModel: ObservableObject {
 
     private func registerUndo(previousAnnotations: [MarkdownAnnotation]) {
         undoManager?.registerUndo(withTarget: self) { target in
-            let current = target.annotationStore.annotations
-            target.annotationStore.load(previousAnnotations)
-            target.persistAnnotations()
-            target.annotationsNeedsReapply = UUID()
-            
-            // Register redo
-            target.registerUndo(previousAnnotations: current)
+            MainActor.assumeIsolated {
+                let current = target.annotationStore.annotations
+                target.annotationStore.load(previousAnnotations)
+                target.persistAnnotations()
+                target.annotationsNeedsReapply = UUID()
+                
+                // Register redo
+                target.registerUndo(previousAnnotations: current)
+            }
         }
     }
 

@@ -34,11 +34,39 @@ final class FolderTreeStore: ObservableObject {
             let fileIndex = MarkdownFileIndex()
             fileIndex.rebuild(rootFolderURL: url, markdownFiles: files)
             
-            self.treesByRootURL[url] = [rootNode]
+            let statusMap = GitStatusService.getStatus(for: url)
+            let rootNodeWithGit = applyGitStatus(to: rootNode, statusMap: statusMap, rootURL: url)
+            
+            self.treesByRootURL[url] = [rootNodeWithGit]
             self.filesByRootURL[url] = files
             self.indicesByRootURL[url] = fileIndex
         } catch {
             print("Failed to scan folder \(url): \(error)")
         }
+    }
+    
+    private func applyGitStatus(to node: FileTreeNode, statusMap: [String: GitStatus], rootURL: URL) -> FileTreeNode {
+        var newNode = node
+        let path = node.url.path
+        let rootPath = rootURL.path
+        if path.hasPrefix(rootPath) {
+            var relPath = String(path.dropFirst(rootPath.count))
+            if relPath.hasPrefix("/") {
+                relPath = String(relPath.dropFirst())
+            }
+            if let status = statusMap[relPath] {
+                newNode.gitStatus = status
+            }
+        }
+        
+        newNode.children = newNode.children.map { applyGitStatus(to: $0, statusMap: statusMap, rootURL: rootURL) }
+        
+        if newNode.isDirectory {
+            if newNode.children.contains(where: { $0.gitStatus != .normal }) {
+                newNode.gitStatus = .modified
+            }
+        }
+        
+        return newNode
     }
 }

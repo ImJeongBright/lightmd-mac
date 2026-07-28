@@ -12,6 +12,7 @@ struct PageIcon: Codable, Equatable {
 }
 
 struct SidecarMetadata: Codable {
+    var scrollOffset: Double?
     var filePath: String?
     var lastOpenedAt: Date?
     var lastReadHeadingID: String?

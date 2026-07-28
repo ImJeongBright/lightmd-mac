@@ -75,7 +75,19 @@ swiftc \
   "$PROJECT_DIR/LightMD/Utils/HTMLGenerator.swift" \
   "$PROJECT_DIR/LightMD/Services/FolderScanner.swift" \
   "$PROJECT_DIR/LightMD/Services/MarkdownFileIndex.swift" \
-  "$PROJECT_DIR/LightMD/Services/MarkdownLinkResolver.swift"
+  "$PROJECT_DIR/LightMD/Services/MarkdownLinkResolver.swift" \
+  "$PROJECT_DIR/LightMD/Services/GitStatusService.swift" \
+  "$PROJECT_DIR/LightMD/Models/QuickOpenItem.swift" \
+  "$PROJECT_DIR/LightMD/Models/WorkspaceSearchResult.swift" \
+  "$PROJECT_DIR/LightMD/Models/AnnotationLibraryEntry.swift" \
+  "$PROJECT_DIR/LightMD/Models/DocumentStatistics.swift" \
+  "$PROJECT_DIR/LightMD/Services/WorkspaceSearchService.swift" \
+  "$PROJECT_DIR/LightMD/ViewModels/SearchViewModel.swift" \
+  "$PROJECT_DIR/LightMD/ViewModels/AnnotationLibraryViewModel.swift" \
+  "$PROJECT_DIR/LightMD/Views/QuickOpenPanel.swift" \
+  "$PROJECT_DIR/LightMD/Views/WorkspaceSearchPanel.swift" \
+  "$PROJECT_DIR/LightMD/Views/AnnotationLibraryView.swift" \
+  "$PROJECT_DIR/LightMD/Views/WikiLinkPreviewPanel.swift"
 
 cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>

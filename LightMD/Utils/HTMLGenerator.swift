@@ -381,6 +381,43 @@ enum HTMLGenerator {
         }
     });
 
+    var scrollTimeout = null;
+    window.addEventListener('scroll', function() {
+        if(scrollTimeout) clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(function() {
+            if (window.webkit && window.webkit.messageHandlers.scrollPosition) {
+                window.webkit.messageHandlers.scrollPosition.postMessage({
+                    offset: window.scrollY
+                });
+            }
+        }, 500);
+    });
+    
+    // WikiLink hover preview
+    var _hoverTimer = null;
+    document.addEventListener('mouseover', function(e) {
+        var a = e.target.closest('a.lightmd-wikilink');
+        if (!a) return;
+        clearTimeout(_hoverTimer);
+        _hoverTimer = setTimeout(function() {
+            var rect = a.getBoundingClientRect();
+            if (window.webkit && window.webkit.messageHandlers.wikiLinkHover) {
+                window.webkit.messageHandlers.wikiLinkHover.postMessage({
+                    url: a.href,
+                    x: e.screenX,
+                    y: e.screenY
+                });
+            }
+        }, 400);
+    });
+    document.addEventListener('mouseout', function(e) {
+        var a = e.target.closest('a.lightmd-wikilink');
+        if (!a) return;
+        clearTimeout(_hoverTimer);
+        if (window.webkit && window.webkit.messageHandlers.wikiLinkHoverEnd) {
+            window.webkit.messageHandlers.wikiLinkHoverEnd.postMessage(null);
+        }
+    });
     </script>
     """
 

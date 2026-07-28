@@ -1,220 +1,309 @@
 import SwiftUI
+import AppKit
+import UniformTypeIdentifiers
+
+// MARK: - System Font Helper
+
+private enum SystemFontList {
+    static let families: [String] = {
+        let excluded: Set<String> = [
+            "Symbol", "Zapf Dingbats", "Webdings", "Wingdings",
+            "Marlett", "MT Extra", "LastResort"
+        ]
+        let all = NSFontManager.shared.availableFontFamilies
+        let filtered = all.filter { name in
+            !name.hasPrefix(".") &&
+            !name.contains("ColorEmoji") &&
+            !name.contains("Symbols Only") &&
+            !excluded.contains(name)
+        }
+        return ["System"] + filtered
+    }()
+}
+
+// MARK: - Main View
 
 struct AppearanceSettingsView: View {
     @ObservedObject var settings: ReaderAppearanceSettings
     @Environment(\.colorScheme) private var colorScheme
-    
+    @State private var fontSearch = ""
+
     private var colors: AppColors {
         settings.resolvedColors(for: colorScheme)
     }
-    
+    private var selectedTheme: SceneTheme {
+        SceneTheme.theme(for: settings.current.sceneThemeID)
+    }
+    private var filteredFonts: [String] {
+        let all = SystemFontList.families
+        if fontSearch.isEmpty { return all }
+        return all.filter { $0.localizedCaseInsensitiveContains(fontSearch) }
+    }
+
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                Text("Appearance")
-                    .font(.headline)
-                    .foregroundStyle(colors.primaryText)
-                
-                // Theme
-                settingSection("Theme") {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 70), spacing: 8)], spacing: 8) {
-                        ForEach(ReaderTheme.allCases) { theme in
-                            themeButton(theme)
+        HSplitView {
+            // Left controls panel
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    settingGroup("Theme") {
+                        Picker("", selection: $settings.current.sceneThemeID) {
+                            ForEach(SceneThemeID.allCases) { id in
+                                let t = SceneTheme.theme(for: id)
+                                HStack(spacing: 6) {
+                                    Circle().fill(t.accent).frame(width: 8, height: 8)
+                                    Text(t.displayName)
+                                }.tag(id)
+                            }
                         }
+                        .pickerStyle(.menu)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                }
-                
-                // Accent Color
-                settingSection("Accent Color") {
-                    HStack(spacing: 10) {
-                        ForEach(AccentPreset.allCases) { preset in
-                            accentButton(preset)
-                        }
-                    }
-                }
 
-                // Highlight Color
-                settingSection("Highlight Color") {
-                    HStack(spacing: 10) {
-                        ForEach(HighlightPreset.allCases) { preset in
-                            highlightButton(preset)
-                        }
-                    }
-                }
+                    settingGroup("Font") {
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Image(systemName: "magnifyingglass")
+                                    .foregroundStyle(colors.tertiaryText)
+                                    .font(.system(size: 11))
+                                TextField("Search fonts\u{2026}", text: $fontSearch)
+                                    .textFieldStyle(.plain)
+                                    .font(.system(size: 12))
+                            }
+                            .padding(.horizontal, 8).padding(.vertical, 5)
+                            .background(RoundedRectangle(cornerRadius: 6).fill(colors.hoverBackground))
 
-                // Text Color
-                settingSection("Text Color") {
-                    Picker("", selection: $settings.current.textColorPreset) {
-                        ForEach(TextColorPreset.allCases) { preset in
-                            Text(preset.label).tag(preset)
+                            ScrollView {
+                                LazyVStack(alignment: .leading, spacing: 0) {
+                                    ForEach(filteredFonts, id: \.self) { name in
+                                        let isSelected = settings.current.fontFamilyName == name
+                                        Button {
+                                            settings.current.fontFamilyName = name
+                                            fontSearch = ""
+                                        } label: {
+                                            HStack {
+                                                Text(name == "System" ? "System Default" : name)
+                                                    .font(name == "System" ? .system(size: 12) : .custom(name, size: 12))
+                                                    .foregroundStyle(isSelected ? colors.accent : colors.primaryText)
+                                                    .lineLimit(1)
+                                                Spacer()
+                                                if isSelected {
+                                                    Image(systemName: "checkmark")
+                                                        .font(.system(size: 10, weight: .semibold))
+                                                        .foregroundStyle(colors.accent)
+                                                }
+                                            }
+                                            .padding(.horizontal, 8).padding(.vertical, 5)
+                                            .background(RoundedRectangle(cornerRadius: 4)
+                                                .fill(isSelected ? colors.accentSoft : Color.clear))
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+                                .padding(.vertical, 4)
+                            }
+                            .frame(height: 150)
+                            .background(RoundedRectangle(cornerRadius: 8).fill(colors.sidebarBackground))
+                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(colors.border, lineWidth: 0.5))
                         }
                     }
-                    .pickerStyle(.menu)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                
-                // Font Size
-                settingSection("Font Size") {
-                    HStack {
-                        Button(action: { settings.decreaseFontSize() }) {
-                            Image(systemName: "textformat.size.smaller")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.bordered)
-                        
-                        Text("\(settings.current.fontSizeBase)px")
-                            .font(.system(size: 14, weight: .medium, design: .monospaced))
-                            .frame(width: 40, alignment: .center)
-                        
-                        Button(action: { settings.increaseFontSize() }) {
-                            Image(systemName: "textformat.size.larger")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.bordered)
-                    }
-                }
-                
-                // Font Family
-                settingSection("Font") {
-                    Picker("", selection: $settings.current.fontFamily) {
-                        ForEach(FontFamily.allCases, id: \.self) { font in
-                            Text(font.rawValue).tag(font)
+
+                    settingGroup("Size") {
+                        HStack(spacing: 10) {
+                            Button { settings.decreaseFontSize() } label: {
+                                Image(systemName: "minus").frame(width: 28, height: 28)
+                            }.buttonStyle(.bordered)
+                            Text("\(settings.current.fontSizeBase) px")
+                                .font(.system(size: 13, weight: .medium, design: .monospaced))
+                                .foregroundStyle(colors.primaryText)
+                                .frame(width: 44)
+                            Button { settings.increaseFontSize() } label: {
+                                Image(systemName: "plus").frame(width: 28, height: 28)
+                            }.buttonStyle(.bordered)
                         }
                     }
-                    .pickerStyle(.segmented)
-                }
-                
-                // Line Spacing
-                settingSection("Line Spacing") {
-                    Picker("", selection: $settings.current.lineSpacing) {
-                        ForEach(LineSpacing.allCases, id: \.self) { spacing in
-                            Text(spacing.rawValue).tag(spacing)
+
+                    settingGroup("Line Spacing") {
+                        Picker("", selection: $settings.current.lineSpacing) {
+                            ForEach(LineSpacing.allCases, id: \.self) { s in
+                                Text(s.rawValue).tag(s)
+                            }
+                        }.pickerStyle(.segmented)
+                    }
+
+                    settingGroup("Width") {
+                        Picker("", selection: $settings.current.contentWidth) {
+                            ForEach(ContentWidth.allCases, id: \.self) { w in
+                                Text(w.rawValue).tag(w)
+                            }
+                        }.pickerStyle(.segmented)
+                    }
+
+                    settingGroup("Background") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Button(settings.current.customBackgroundBookmark != nil ? "Change\u{2026}" : "Choose Image\u{2026}") {
+                                    selectBg()
+                                }.buttonStyle(.bordered)
+                                if settings.current.customBackgroundBookmark != nil {
+                                    Button("Remove") { settings.current.customBackgroundBookmark = nil }
+                                        .buttonStyle(.plain).foregroundStyle(.red).font(.system(size: 11))
+                                }
+                            }
+                            if settings.current.customBackgroundBookmark != nil {
+                                sliderRow("Opacity", value: $settings.current.customBackgroundOpacity, range: 0...1)
+                                sliderRow("Blur", value: $settings.current.customBackgroundBlur, range: 0...20)
+                            }
                         }
                     }
-                    .pickerStyle(.segmented)
+
+                    Divider().overlay(colors.divider).padding(.vertical, 8)
+                    Button("Reset to Defaults") { settings.reset() }
+                        .buttonStyle(.plain).font(.system(size: 11)).foregroundStyle(colors.tertiaryText)
+                        .frame(maxWidth: .infinity, alignment: .center).padding(.bottom, 16)
                 }
-                
-                // Content Width
-                settingSection("Width") {
-                    Picker("", selection: $settings.current.contentWidth) {
-                        ForEach(ContentWidth.allCases, id: \.self) { width in
-                            Text(width.rawValue).tag(width)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                }
-                
-                Divider()
-                    .overlay(colors.divider)
-                
-                Button("Reset to Defaults") {
-                    settings.reset()
-                }
-                .buttonStyle(.link)
-                .font(.caption)
-                .foregroundStyle(Color.red)
-                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.horizontal, 14).padding(.top, 14)
             }
-            .padding(20)
-        }
-        .frame(width: 280)
-        .frame(maxHeight: 520)
-        .background(colors.sidebarBackground)
-    }
+            .frame(minWidth: 210, idealWidth: 230, maxWidth: 250)
+            .background(colors.sidebarBackground)
 
-    // MARK: - Components
-
-    @ViewBuilder
-    private func settingSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(colors.secondaryText)
-            content()
+            // Right preview panel
+            ThemePreviewView(
+                theme: selectedTheme,
+                fontFamilyName: settings.current.fontFamilyName,
+                fontSize: settings.current.fontSizeBase,
+                lineSpacing: settings.current.lineSpacing
+            )
+            .frame(minWidth: 300)
         }
-    }
-
-    private func themeButton(_ theme: ReaderTheme) -> some View {
-        let isSelected = settings.current.readerTheme == theme
-        return Button {
-            settings.current.readerTheme = theme
-        } label: {
-            VStack(spacing: 4) {
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(themePreviewColor(theme))
-                    .frame(height: 28)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6)
-                            .stroke(isSelected ? colors.accent : colors.border, lineWidth: isSelected ? 2 : 1)
-                    )
-                Text(theme.label)
-                    .font(.system(size: 10))
-                    .foregroundStyle(isSelected ? colors.primaryText : colors.secondaryText)
-            }
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func accentButton(_ preset: AccentPreset) -> some View {
-        let isSelected = settings.current.accentPreset == preset
-        return Button {
-            settings.current.accentPreset = preset
-        } label: {
-            Circle()
-                .fill(preset.color)
-                .frame(width: 22, height: 22)
-                .overlay(
-                    Circle()
-                        .stroke(Color.white, lineWidth: isSelected ? 2 : 0)
-                )
-                .overlay(
-                    Circle()
-                        .stroke(isSelected ? preset.color : Color.clear, lineWidth: 3)
-                        .padding(-2)
-                )
-        }
-        .buttonStyle(.plain)
-        .help(preset.label)
-    }
-
-    private func highlightButton(_ preset: HighlightPreset) -> some View {
-        let isSelected = settings.current.highlightPreset == preset
-        return Button {
-            settings.current.highlightPreset = preset
-        } label: {
-            Circle()
-                .fill(highlightPreviewColor(preset))
-                .frame(width: 22, height: 22)
-                .overlay(
-                    Circle()
-                        .stroke(isSelected ? colors.primaryText : colors.border, lineWidth: isSelected ? 2 : 1)
-                )
-        }
-        .buttonStyle(.plain)
-        .help(preset.label)
+        .frame(minWidth: 540, minHeight: 460)
     }
 
     // MARK: - Helpers
 
-    private func themePreviewColor(_ theme: ReaderTheme) -> Color {
-        switch theme {
-        case .clean:    return Color(hex: 0xFCFBF8)
-        case .paper:    return Color(hex: 0xF5EFE2)
-        case .mist:     return Color(hex: 0xF6F9FC)
-        case .sage:     return Color(hex: 0xF6FAF6)
-        case .dark:     return Color(hex: 0x1D1F24)
-        case .midnight: return Color(hex: 0x141620)
+    private func settingGroup<C: View>(_ title: String, @ViewBuilder content: () -> C) -> some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Text(title.uppercased())
+                .font(.system(size: 9, weight: .semibold))
+                .foregroundStyle(colors.tertiaryText)
+                .tracking(0.8)
+            content()
+        }
+        .padding(.vertical, 10)
+    }
+
+    private func sliderRow(_ label: String, value: Binding<Double>, range: ClosedRange<Double>) -> some View {
+        HStack {
+            Text(label).font(.system(size: 11)).foregroundStyle(colors.secondaryText).frame(width: 50, alignment: .leading)
+            Slider(value: value, in: range)
         }
     }
 
-    private func highlightPreviewColor(_ preset: HighlightPreset) -> Color {
-        switch preset {
-        case .yellow: return Color(red: 1.00, green: 0.89, blue: 0.47)
-        case .green:  return Color(red: 0.60, green: 0.83, blue: 0.60)
-        case .blue:   return Color(red: 0.58, green: 0.77, blue: 0.94)
-        case .pink:   return Color(red: 0.94, green: 0.66, blue: 0.75)
-        case .purple: return Color(red: 0.77, green: 0.66, blue: 0.91)
-        case .orange: return Color(red: 0.97, green: 0.78, blue: 0.55)
+    private func selectBg() {
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.allowedContentTypes = [.image]
+        if panel.runModal() == .OK, let url = panel.url,
+           let data = try? url.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil) {
+            settings.current.customBackgroundBookmark = data
+        }
+    }
+}
+
+// MARK: - Preview Panel
+
+struct ThemePreviewView: View {
+    let theme: SceneTheme
+    let fontFamilyName: String
+    let fontSize: Int
+    let lineSpacing: LineSpacing
+
+    private var bodyFont: Font {
+        let size = CGFloat(fontSize)
+        return fontFamilyName == "System" ? .system(size: size) : .custom(fontFamilyName, size: size)
+    }
+
+    var body: some View {
+        ZStack {
+            theme.appBackground.ignoresSafeArea()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    // Simulated toolbar
+                    HStack(spacing: 5) {
+                        ForEach(0..<3, id: \.self) { _ in
+                            Capsule().fill(theme.tertiaryText.opacity(0.35)).frame(width: 26, height: 7)
+                        }
+                        Spacer()
+                        Capsule().fill(theme.accent.opacity(0.5)).frame(width: 38, height: 7)
+                    }
+                    .padding(.horizontal, 14).padding(.vertical, 8)
+                    .background(theme.sidebarBackground)
+
+                    // Document
+                    VStack(alignment: .leading, spacing: 14) {
+                        Text("Getting Started")
+                            .font(fontFamilyName == "System"
+                                  ? .system(size: CGFloat(fontSize) * 1.8, weight: .bold)
+                                  : .custom(fontFamilyName, size: CGFloat(fontSize) * 1.8).bold())
+                            .foregroundStyle(theme.primaryText)
+
+                        Text("Overview")
+                            .font(fontFamilyName == "System"
+                                  ? .system(size: CGFloat(fontSize) * 1.25, weight: .semibold)
+                                  : .custom(fontFamilyName, size: CGFloat(fontSize) * 1.25).weight(.semibold))
+                            .foregroundStyle(theme.primaryText)
+
+                        Text("This is sample body text to preview how your documents will look with the selected theme and typography. The quick brown fox jumps over the lazy dog.")
+                            .font(bodyFont)
+                            .foregroundStyle(theme.primaryText)
+                            .lineSpacing(CGFloat(lineSpacing.cssValue - 1.0) * CGFloat(fontSize) * 0.45)
+
+                        // Link
+                        HStack(spacing: 0) {
+                            Text("See also: ").font(bodyFont).foregroundStyle(theme.primaryText)
+                            Text("Related document").font(bodyFont).foregroundStyle(theme.accent)
+                        }
+
+                        // Blockquote
+                        HStack(spacing: 0) {
+                            Rectangle().fill(theme.accent).frame(width: 3)
+                            Text("A quoted passage from the original source material.")
+                                .font(bodyFont).foregroundStyle(theme.secondaryText)
+                                .padding(.horizontal, 10).padding(.vertical, 6)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(theme.blockquoteBackground)
+                        }
+                        .clipShape(RoundedRectangle(cornerRadius: 3))
+
+                        // Code
+                        VStack(alignment: .leading) {
+                            Text("let greeting = \"Hello, LightMD!\"\nprint(greeting)")
+                                .font(.system(size: CGFloat(fontSize) * 0.88, design: .monospaced))
+                                .foregroundStyle(theme.primaryText)
+                                .padding(12).frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .background(theme.codeBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .overlay(RoundedRectangle(cornerRadius: 6).stroke(theme.border, lineWidth: 0.5))
+
+                        // List
+                        VStack(alignment: .leading, spacing: 5) {
+                            ForEach(["First item in list", "Second item with content", "Third item"], id: \.self) { item in
+                                HStack(alignment: .top, spacing: 8) {
+                                    Circle().fill(theme.secondaryText).frame(width: 4, height: 4)
+                                        .padding(.top, CGFloat(fontSize) * 0.38)
+                                    Text(item).font(bodyFont).foregroundStyle(theme.primaryText)
+                                }
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 22).padding(.vertical, 20)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(theme.readerBackground)
+                    .cornerRadius(4)
+                    .padding(.horizontal, 10).padding(.bottom, 20).padding(.top, 8)
+                }
+            }
         }
     }
 }

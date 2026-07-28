@@ -52,14 +52,14 @@ final class ReaderAppearanceSettings: ObservableObject {
     @AppStorage("ReaderAppearanceSettingsData") private var settingsData: Data = Data()
     
     struct Settings: Codable, Equatable {
-        var fontFamily: FontFamily = .system
+        var fontFamilyName: String = "System"
         var fontSizeBase: Int = 15
         var lineSpacing: LineSpacing = .normal
         var contentWidth: ContentWidth = .medium
-        var readerTheme: ReaderTheme = .clean
-        var accentPreset: AccentPreset = .blue
-        var textColorPreset: TextColorPreset = .charcoal
-        var highlightPreset: HighlightPreset = .yellow
+        var sceneThemeID: SceneThemeID = .cleanCanvas
+        var customBackgroundBookmark: Data?
+        var customBackgroundOpacity: Double = 0.5
+        var customBackgroundBlur: Double = 0.0
     }
     
     @Published var current: Settings {
@@ -103,11 +103,7 @@ final class ReaderAppearanceSettings: ObservableObject {
     /// Resolve the full AppColors for the current settings + system color scheme
     func resolvedColors(for colorScheme: ColorScheme) -> AppColors {
         DesignSystem.colors(
-            theme: current.readerTheme,
-            accent: current.accentPreset,
-            textColor: current.textColorPreset,
-            highlight: current.highlightPreset,
-            colorScheme: colorScheme
+            sceneThemeID: current.sceneThemeID
         )
     }
 }

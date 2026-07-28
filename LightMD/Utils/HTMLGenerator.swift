@@ -59,28 +59,13 @@ enum HTMLGenerator {
         return html
     }
 
-    private static func generateCSS(for app: ReaderAppearanceSettings.Settings) -> String {
-        // Resolve colors for light and dark schemes
-        let light = DesignSystem.colors(
-            theme: app.readerTheme,
-            accent: app.accentPreset,
-            textColor: app.textColorPreset,
-            highlight: app.highlightPreset,
-            colorScheme: .light
-        )
-        let dark = DesignSystem.colors(
-            theme: app.readerTheme,
-            accent: app.accentPreset,
-            textColor: app.textColorPreset,
-            highlight: app.highlightPreset,
-            colorScheme: .dark
-        )
+    static func generateCSSVars(for app: ReaderAppearanceSettings.Settings) -> String {
+        let c = DesignSystem.colors(sceneThemeID: app.sceneThemeID)
+        let theme = SceneTheme.theme(for: app.sceneThemeID)
 
-        // For explicit dark/midnight themes, use same palette for both
-        let isExplicitDark = app.readerTheme.isDark
-
-        func vars(_ c: AppColors) -> String {
-            return """
+        return """
+            :root {
+                color-scheme: \(theme.isDark ? "dark" : "light");
                 --app-bg: \(c.cssAppBg);
                 --reader-bg: \(c.cssReaderBg);
                 --text-color: \(c.cssPrimaryText);
@@ -99,41 +84,47 @@ enum HTMLGenerator {
                 --highlight-bg: \(c.cssHighlightBg);
                 --underline-color: \(c.cssUnderlineColor);
                 --memo-bg: \(c.cssMemoBg);
-            """
-        }
+                --font-family: \(fontCSS(for: app.fontFamilyName));
+                --line-spacing: \(app.lineSpacing.cssValue);
+                --content-width: \(app.contentWidth.cssValue);
+                --font-size: \(app.fontSizeBase)px;
+            }
+        """
+    }
 
-        let lightVars = isExplicitDark ? vars(dark) : vars(light)
-        let darkVars = vars(dark)
+    private static func fontCSS(for name: String) -> String {
+        if name == "System" {
+            return "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif"
+        }
+        return "'\(name)', -apple-system, sans-serif"
+    }
+
+    private static func generateCSS(for app: ReaderAppearanceSettings.Settings) -> String {
+        let cssVars = generateCSSVars(for: app)
 
         let css = """
+        <style id="lightmd-theme-vars">
+            \(cssVars)
+        </style>
         <style>
-            :root {
-                color-scheme: light dark;
-                \(lightVars)
-            }
-            @media (prefers-color-scheme: dark) {
-                :root {
-                    \(darkVars)
-                }
-            }
             body {
-                font-family: \(app.fontFamily.cssValue);
+                font-family: var(--font-family);
                 color: var(--text-color);
                 background-color: var(--bg-color);
-                line-height: \(app.lineSpacing.cssValue);
+                line-height: var(--line-spacing);
                 padding: 20px 40px;
                 margin: 0 auto;
-                max-width: \(app.contentWidth.cssValue);
-                font-size: \(app.fontSizeBase)px;
+                max-width: var(--content-width);
+                font-size: var(--font-size);
                 transition: background-color 0.3s, color 0.3s;
             }
             a { color: var(--link-color); text-decoration: none; }
             a:hover { text-decoration: underline; }
             p, h1, h2, h3, h4, h5, h6, ul, ol, pre, blockquote, table {
                 margin-top: 0;
-                margin-bottom: \(app.fontSizeBase + 2)px;
+                margin-bottom: calc(var(--font-size) + 2px);
             }
-            p { margin-bottom: \(app.fontSizeBase)px; }
+            p { margin-bottom: var(--font-size); }
             h1 { font-size: 2em; margin-top: 24px; font-weight: 700; }
             h2 { font-size: 1.5em; margin-top: 20px; font-weight: 600; }
             h3 { font-size: 1.25em; margin-top: 16px; font-weight: 600; }

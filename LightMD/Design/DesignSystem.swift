@@ -275,281 +275,49 @@ enum DesignSystem {
     // MARK: - Resolve colors for current theme + scheme
 
     static func colors(
-        theme: ReaderTheme = .clean,
-        accent: AccentPreset = .blue,
-        textColor: TextColorPreset = .charcoal,
-        highlight: HighlightPreset = .yellow,
-        colorScheme: ColorScheme
+        sceneThemeID: SceneThemeID
     ) -> AppColors {
-        let effectiveTheme: ReaderTheme
-        if theme == .clean || theme == .paper || theme == .mist || theme == .sage {
-            effectiveTheme = colorScheme == .dark ? .dark : theme
-        } else {
-            effectiveTheme = theme
-        }
-
-        switch effectiveTheme {
-        case .clean:
-            return cleanTheme(accent: accent, textColor: textColor, highlight: highlight)
-        case .paper:
-            return paperTheme(accent: accent, textColor: textColor, highlight: highlight)
-        case .mist:
-            return mistTheme(accent: accent, textColor: textColor, highlight: highlight)
-        case .sage:
-            return sageTheme(accent: accent, textColor: textColor, highlight: highlight)
-        case .dark:
-            return darkTheme(accent: accent, highlight: highlight)
-        case .midnight:
-            return midnightTheme(accent: accent, highlight: highlight)
-        }
-    }
-
-    // MARK: - Light Themes
-
-    private static func cleanTheme(accent: AccentPreset, textColor: TextColorPreset, highlight: HighlightPreset) -> AppColors {
-        let primaryText = textColor.isSuitableForLight ? textColor.color : TextColorPreset.charcoal.color
+        let theme = SceneTheme.theme(for: sceneThemeID)
         return AppColors(
-            appBackground:       Color(hex: 0xF7F6F2),
-            sidebarBackground:   Color(hex: 0xF1F0EC),
-            readerBackground:    Color(hex: 0xFCFBF8),
-            secondarySurface:    Color(hex: 0xF3F1EC),
-            primaryText:         primaryText,
-            secondaryText:       Color(hex: 0x706E68),
-            tertiaryText:        Color(hex: 0x96938B),
-            border:              Color(hex: 0xE4E1DA),
-            divider:             Color(hex: 0xE8E5DE),
-            hoverBackground:     Color(hex: 0xECEAE4),
-            selectedBackground:  accent.softColor,
-            accent:              accent.color,
-            accentSoft:          accent.softColor,
-            codeBackground:      Color(hex: 0xF3F1EC),
-            inlineCodeBackground:Color(hex: 0xF0EDE6),
-            tableHeaderBackground:Color(hex: 0xF1EFEA),
-            blockquoteBackground:Color(hex: 0xF5F3EE),
-            annotationHighlight: highlight.swiftUIColor,
-            annotationUnderline: Color(red: 0.72, green: 0.62, blue: 0.34).opacity(0.70),
-            annotationControlBackground: Color.white.opacity(0.9),
-            cssAppBg: "#F7F6F2", cssReaderBg: "#FCFBF8",
-            cssPrimaryText: textColor.isSuitableForLight ? textColor.hexString : "#292824",
-            cssSecondaryText: "#706E68",
-            cssBorder: "#E4E1DA", cssDivider: "#E8E5DE",
-            cssSecondarySurface: "#F3F1EC",
-            cssAccent: accent.hexString, cssAccentSoft: "#E6EAF5",
-            cssCodeBg: "#F3F1EC", cssTableHeaderBg: "#F1EFEA",
-            cssBlockquoteBg: "#F5F3EE",
-            cssHighlightBg: highlight.lightCSS,
-            cssUnderlineColor: "rgba(184, 158, 86, 0.70)",
-            cssMemoBg: "rgba(90, 200, 120, 0.15)"
-        )
-    }
-
-    private static func paperTheme(accent: AccentPreset, textColor: TextColorPreset, highlight: HighlightPreset) -> AppColors {
-        let primaryText = textColor.isSuitableForLight ? textColor.color : TextColorPreset.warmBrown.color
-        return AppColors(
-            appBackground:       Color(hex: 0xF0E8D8),
-            sidebarBackground:   Color(hex: 0xEBE3D2),
-            readerBackground:    Color(hex: 0xF5EFE2),
-            secondarySurface:    Color(hex: 0xEAE2D0),
-            primaryText:         primaryText,
-            secondaryText:       Color(hex: 0x7A6F5E),
-            tertiaryText:        Color(hex: 0x9E937F),
-            border:              Color(hex: 0xD8CDB8),
-            divider:             Color(hex: 0xDDD2BD),
-            hoverBackground:     Color(hex: 0xE5DCCA),
-            selectedBackground:  accent.softColor,
-            accent:              accent.color,
-            accentSoft:          accent.softColor,
-            codeBackground:      Color(hex: 0xEAE2D0),
-            inlineCodeBackground:Color(hex: 0xE6DDC9),
-            tableHeaderBackground:Color(hex: 0xE8E0CE),
-            blockquoteBackground:Color(hex: 0xEDE5D5),
-            annotationHighlight: highlight.swiftUIColor,
-            annotationUnderline: Color(red: 0.72, green: 0.62, blue: 0.34).opacity(0.70),
-            annotationControlBackground: Color(hex: 0xF5EFE2).opacity(0.9),
-            cssAppBg: "#F0E8D8", cssReaderBg: "#F5EFE2",
-            cssPrimaryText: textColor.isSuitableForLight ? textColor.hexString : "#3B2E1E",
-            cssSecondaryText: "#7A6F5E",
-            cssBorder: "#D8CDB8", cssDivider: "#DDD2BD",
-            cssSecondarySurface: "#EAE2D0",
-            cssAccent: accent.hexString, cssAccentSoft: "#E6EAF5",
-            cssCodeBg: "#EAE2D0", cssTableHeaderBg: "#E8E0CE",
-            cssBlockquoteBg: "#EDE5D5",
-            cssHighlightBg: highlight.lightCSS,
-            cssUnderlineColor: "rgba(184, 140, 60, 0.70)",
-            cssMemoBg: "rgba(90, 180, 100, 0.15)"
-        )
-    }
-
-    private static func mistTheme(accent: AccentPreset, textColor: TextColorPreset, highlight: HighlightPreset) -> AppColors {
-        let primaryText = textColor.isSuitableForLight ? textColor.color : TextColorPreset.charcoal.color
-        return AppColors(
-            appBackground:       Color(hex: 0xF0F4F8),
-            sidebarBackground:   Color(hex: 0xEAEFF5),
-            readerBackground:    Color(hex: 0xF6F9FC),
-            secondarySurface:    Color(hex: 0xECF0F5),
-            primaryText:         primaryText,
-            secondaryText:       Color(hex: 0x6A7280),
-            tertiaryText:        Color(hex: 0x92969E),
-            border:              Color(hex: 0xDCE2EA),
-            divider:             Color(hex: 0xE0E5ED),
-            hoverBackground:     Color(hex: 0xE4E9F0),
-            selectedBackground:  accent.softColor,
-            accent:              accent.color,
-            accentSoft:          accent.softColor,
-            codeBackground:      Color(hex: 0xECF0F5),
-            inlineCodeBackground:Color(hex: 0xE8ECF2),
-            tableHeaderBackground:Color(hex: 0xEAEEF4),
-            blockquoteBackground:Color(hex: 0xEFF3F8),
-            annotationHighlight: highlight.swiftUIColor,
-            annotationUnderline: Color(red: 0.55, green: 0.60, blue: 0.72).opacity(0.70),
-            annotationControlBackground: Color.white.opacity(0.9),
-            cssAppBg: "#F0F4F8", cssReaderBg: "#F6F9FC",
-            cssPrimaryText: textColor.isSuitableForLight ? textColor.hexString : "#292824",
-            cssSecondaryText: "#6A7280",
-            cssBorder: "#DCE2EA", cssDivider: "#E0E5ED",
-            cssSecondarySurface: "#ECF0F5",
-            cssAccent: accent.hexString, cssAccentSoft: "#E6EAF5",
-            cssCodeBg: "#ECF0F5", cssTableHeaderBg: "#EAEEF4",
-            cssBlockquoteBg: "#EFF3F8",
-            cssHighlightBg: highlight.lightCSS,
-            cssUnderlineColor: "rgba(140, 155, 184, 0.70)",
-            cssMemoBg: "rgba(80, 190, 120, 0.15)"
-        )
-    }
-
-    private static func sageTheme(accent: AccentPreset, textColor: TextColorPreset, highlight: HighlightPreset) -> AppColors {
-        let primaryText = textColor.isSuitableForLight ? textColor.color : TextColorPreset.charcoal.color
-        return AppColors(
-            appBackground:       Color(hex: 0xF0F4F0),
-            sidebarBackground:   Color(hex: 0xEAEFEA),
-            readerBackground:    Color(hex: 0xF6FAF6),
-            secondarySurface:    Color(hex: 0xECF1EC),
-            primaryText:         primaryText,
-            secondaryText:       Color(hex: 0x6A7A6A),
-            tertiaryText:        Color(hex: 0x8E9E8E),
-            border:              Color(hex: 0xD8E2D8),
-            divider:             Color(hex: 0xDDE6DD),
-            hoverBackground:     Color(hex: 0xE2EBE2),
-            selectedBackground:  accent.softColor,
-            accent:              accent.color,
-            accentSoft:          accent.softColor,
-            codeBackground:      Color(hex: 0xECF1EC),
-            inlineCodeBackground:Color(hex: 0xE6EDE6),
-            tableHeaderBackground:Color(hex: 0xEAEFEA),
-            blockquoteBackground:Color(hex: 0xEEF4EE),
-            annotationHighlight: highlight.swiftUIColor,
-            annotationUnderline: Color(red: 0.55, green: 0.68, blue: 0.55).opacity(0.70),
-            annotationControlBackground: Color.white.opacity(0.9),
-            cssAppBg: "#F0F4F0", cssReaderBg: "#F6FAF6",
-            cssPrimaryText: textColor.isSuitableForLight ? textColor.hexString : "#292824",
-            cssSecondaryText: "#6A7A6A",
-            cssBorder: "#D8E2D8", cssDivider: "#DDE6DD",
-            cssSecondarySurface: "#ECF1EC",
-            cssAccent: accent.hexString, cssAccentSoft: "#E4EDE4",
-            cssCodeBg: "#ECF1EC", cssTableHeaderBg: "#EAEEF4",
-            cssBlockquoteBg: "#EEF4EE",
-            cssHighlightBg: highlight.lightCSS,
-            cssUnderlineColor: "rgba(140, 175, 140, 0.70)",
-            cssMemoBg: "rgba(80, 190, 100, 0.15)"
-        )
-    }
-
-    // MARK: - Dark Themes
-
-    private static func darkTheme(accent: AccentPreset, highlight: HighlightPreset) -> AppColors {
-        return AppColors(
-            appBackground:       Color(hex: 0x1D1F24),
-            sidebarBackground:   Color(hex: 0x202229),
-            readerBackground:    Color(hex: 0x1D1F24),
-            secondarySurface:    Color(hex: 0x272A31),
-            primaryText:         Color(hex: 0xE7E5DF),
-            secondaryText:       Color(hex: 0xA5A39D),
-            tertiaryText:        Color(hex: 0x6E6C66),
-            border:              Color(hex: 0x32353D),
-            divider:             Color(hex: 0x2E3138),
-            hoverBackground:     Color(hex: 0x2E3138),
-            selectedBackground:  accent.darkSoftColor,
-            accent:              accent.darkColor,
-            accentSoft:          accent.darkSoftColor,
-            codeBackground:      Color(hex: 0x272A31),
-            inlineCodeBackground:Color(hex: 0x2A2D34),
-            tableHeaderBackground:Color(hex: 0x292C33),
-            blockquoteBackground:Color(hex: 0x252830),
-            annotationHighlight: Color(red: 0.78, green: 0.61, blue: 0.24).opacity(0.22),
-            annotationUnderline: Color(red: 0.82, green: 0.72, blue: 0.46).opacity(0.70),
-            annotationControlBackground: Color.white.opacity(0.080),
-            cssAppBg: "#1D1F24", cssReaderBg: "#1D1F24",
-            cssPrimaryText: "#E7E5DF", cssSecondaryText: "#A5A39D",
-            cssBorder: "#32353D", cssDivider: "#2E3138",
-            cssSecondarySurface: "#272A31",
-            cssAccent: accent.darkHexString, cssAccentSoft: "#2E3548",
-            cssCodeBg: "#272A31", cssTableHeaderBg: "#292C33",
-            cssBlockquoteBg: "#252830",
-            cssHighlightBg: highlight.darkCSS,
-            cssUnderlineColor: "rgba(210, 184, 118, 0.70)",
-            cssMemoBg: "rgba(90, 200, 120, 0.15)"
-        )
-    }
-
-    private static func midnightTheme(accent: AccentPreset, highlight: HighlightPreset) -> AppColors {
-        return AppColors(
-            appBackground:       Color(hex: 0x141620),
-            sidebarBackground:   Color(hex: 0x181A26),
-            readerBackground:    Color(hex: 0x161822),
-            secondarySurface:    Color(hex: 0x1E2030),
-            primaryText:         Color(hex: 0xDCDAD4),
-            secondaryText:       Color(hex: 0x8A8882),
-            tertiaryText:        Color(hex: 0x5C5A55),
-            border:              Color(hex: 0x282A36),
-            divider:             Color(hex: 0x242630),
-            hoverBackground:     Color(hex: 0x242630),
-            selectedBackground:  accent.darkSoftColor,
-            accent:              accent.darkColor,
-            accentSoft:          accent.darkSoftColor,
-            codeBackground:      Color(hex: 0x1E2030),
-            inlineCodeBackground:Color(hex: 0x202234),
-            tableHeaderBackground:Color(hex: 0x1E2030),
-            blockquoteBackground:Color(hex: 0x1A1C28),
-            annotationHighlight: Color(red: 0.78, green: 0.61, blue: 0.24).opacity(0.20),
-            annotationUnderline: Color(red: 0.82, green: 0.72, blue: 0.46).opacity(0.65),
-            annotationControlBackground: Color.white.opacity(0.060),
-            cssAppBg: "#141620", cssReaderBg: "#161822",
-            cssPrimaryText: "#DCDAD4", cssSecondaryText: "#8A8882",
-            cssBorder: "#282A36", cssDivider: "#242630",
-            cssSecondarySurface: "#1E2030",
-            cssAccent: accent.darkHexString, cssAccentSoft: "#242640",
-            cssCodeBg: "#1E2030", cssTableHeaderBg: "#1E2030",
-            cssBlockquoteBg: "#1A1C28",
-            cssHighlightBg: highlight.darkCSS,
-            cssUnderlineColor: "rgba(210, 184, 118, 0.65)",
-            cssMemoBg: "rgba(90, 200, 120, 0.12)"
+            appBackground: theme.appBackground,
+            sidebarBackground: theme.sidebarBackground,
+            readerBackground: theme.readerBackground,
+            secondarySurface: theme.secondarySurface,
+            primaryText: theme.primaryText,
+            secondaryText: theme.secondaryText,
+            tertiaryText: theme.tertiaryText,
+            border: theme.border,
+            divider: theme.divider,
+            hoverBackground: theme.hoverBackground,
+            selectedBackground: theme.selectedBackground,
+            accent: theme.accent,
+            accentSoft: theme.accentSoft,
+            codeBackground: theme.codeBackground,
+            inlineCodeBackground: theme.inlineCodeBackground,
+            tableHeaderBackground: theme.tableHeaderBackground,
+            blockquoteBackground: theme.blockquoteBackground,
+            annotationHighlight: theme.accent.opacity(0.3),
+            annotationUnderline: theme.accent.opacity(0.7),
+            annotationControlBackground: theme.readerBackground.opacity(0.9),
+            cssAppBg: theme.cssAppBg,
+            cssReaderBg: theme.cssReaderBg,
+            cssPrimaryText: theme.cssPrimaryText,
+            cssSecondaryText: theme.cssSecondaryText,
+            cssBorder: theme.cssBorder,
+            cssDivider: theme.cssDivider,
+            cssSecondarySurface: theme.cssSecondarySurface,
+            cssAccent: theme.cssAccent,
+            cssAccentSoft: theme.cssAccentSoft,
+            cssCodeBg: theme.cssCodeBg,
+            cssTableHeaderBg: theme.cssTableHeaderBg,
+            cssBlockquoteBg: theme.cssBlockquoteBg,
+            cssHighlightBg: theme.cssHighlightBg,
+            cssUnderlineColor: theme.cssAccent,
+            cssMemoBg: theme.cssAccentSoft
         )
     }
 
     // MARK: - Legacy compatibility (deprecated, still used during migration)
-
-    static func palette(for scheme: ColorScheme) -> DesignPalette {
-        let c = colors(colorScheme: scheme)
-        return DesignPalette(
-            appBackground: c.sidebarBackground,
-            documentSurface: c.readerBackground,
-            editorSurface: c.readerBackground,
-            primaryText: c.primaryText,
-            secondaryText: c.secondaryText,
-            mutedText: c.tertiaryText,
-            border: c.border,
-            subtleBorder: c.divider,
-            codeBackground: c.codeBackground,
-            inlineCodeBackground: c.inlineCodeBackground,
-            quoteBackground: c.blockquoteBackground,
-            toolbarControlBackground: c.hoverBackground,
-            badgeBackground: c.secondarySurface,
-            cardShadow: Color.clear,
-            annotationHighlight: c.annotationHighlight,
-            annotationUnderline: c.annotationUnderline,
-            annotationControlBackground: c.annotationControlBackground
-        )
-    }
 }
 
 // MARK: - Legacy DesignPalette (kept for backward compat)

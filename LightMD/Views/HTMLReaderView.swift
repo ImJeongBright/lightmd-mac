@@ -42,8 +42,8 @@ struct HTMLReaderView: NSViewRepresentable {
     func updateNSView(_ webView: WKWebView, context: Context) {
         let currentAppearance = appearance.current
         
-        // Reload HTML when document text changes or appearance settings change
-        if context.coordinator.lastLoadedText != text || context.coordinator.lastAppearance != currentAppearance {
+        // Reload HTML when document text changes
+        if context.coordinator.lastLoadedText != text {
             context.coordinator.lastLoadedText = text
             context.coordinator.lastAppearance = currentAppearance
             context.coordinator.didFinishLoading = false
@@ -54,6 +54,24 @@ struct HTMLReaderView: NSViewRepresentable {
                 webView.loadHTMLString(generateHTML(), baseURL: nil)
             }
             return
+        }
+
+        // If text is same, but appearance changed, just inject CSS vars to update theme/typography
+        if context.coordinator.lastAppearance != currentAppearance {
+            context.coordinator.lastAppearance = currentAppearance
+            let cssVars = HTMLGenerator.generateCSSVars(for: currentAppearance)
+            let escapedCSS = cssVars.replacingOccurrences(of: "`", with: "\\`")
+            let js = """
+            var styleEl = document.getElementById('lightmd-theme-vars');
+            if (styleEl) {
+                styleEl.innerHTML = `\\(escapedCSS)`;
+            }
+            """
+            // Using \ (escapedCSS) inside Swift string interpolation evaluates to the string contents.
+            // But we want JavaScript template literal to contain it. 
+            // So we inject it normally, but ensure it doesn't break JS syntax.
+            let safeJS = "var styleEl = document.getElementById('lightmd-theme-vars'); if (styleEl) { styleEl.innerHTML = `" + cssVars.replacingOccurrences(of: "`", with: "\\`") + "`; }"
+            webView.evaluateJavaScript(safeJS, completionHandler: nil)
         }
 
         guard context.coordinator.didFinishLoading else { return }

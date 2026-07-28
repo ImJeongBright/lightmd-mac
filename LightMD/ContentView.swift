@@ -7,6 +7,8 @@ struct ContentView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.undoManager) private var undoManager
     @AppStorage("LightMDAppTheme") private var selectedThemeRaw = AppTheme.system.rawValue
+    @AppStorage("isOutlineVisible") private var isOutlineVisible: Bool = true
+    @AppStorage("isSidebarVisible") private var isSidebarVisible: Bool = true
     @State private var eventMonitor: Any?
 
     @StateObject private var workspaceViewModel: WorkspaceViewModel
@@ -64,7 +66,7 @@ struct ContentView: View {
         .onChange(of: undoManager) { manager in
             viewModel.undoManager = manager
         }
-        .background(colors.appBackground)
+        .background(ThemeBackgroundView())
         .preferredColorScheme(selectedTheme.colorScheme)
         .environmentObject(viewModel)
         .environmentObject(appearance)
@@ -116,9 +118,21 @@ struct ContentView: View {
     
     private func setupEventMonitor() {
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .otherMouseDown, .otherMouseUp, .swipe]) { event in
-            // Handle cmd + [ and cmd + ]
+            // Handle shortcuts
             if event.type == .keyDown {
-                if event.modifierFlags.intersection(.deviceIndependentFlagsMask).contains(.command) {
+                let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+                
+                // Cmd + Option + O (Toggle Outline)
+                if flags.contains([.command, .option]) {
+                    if event.charactersIgnoringModifiers?.lowercased() == "œ" || event.charactersIgnoringModifiers?.lowercased() == "o" || event.keyCode == 31 {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            isOutlineVisible.toggle()
+                        }
+                        return nil
+                    }
+                }
+                
+                if flags == .command {
                     if event.charactersIgnoringModifiers == "[" || event.keyCode == 33 {
                         viewModel.navigateBack()
                         return nil // Consume event
@@ -172,16 +186,21 @@ struct ContentView: View {
 
     private var workspace: some View {
         HStack(spacing: 0) {
-            if viewModel.hasOpenFolder {
+            if viewModel.hasOpenFolder && isSidebarVisible {
                 FolderDocsSidebarView()
+                    .transition(.move(edge: .leading).combined(with: .opacity))
             }
 
             centerPane
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            OutlineSidebarView(navigationRequest: $viewModel.headingNavigationRequest)
+            if isOutlineVisible {
+                OutlineSidebarView(navigationRequest: $viewModel.headingNavigationRequest)
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
+            }
         }
-        .background(colors.appBackground)
+        .background(ThemeBackgroundView())
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isOutlineVisible)
     }
 
     @ViewBuilder

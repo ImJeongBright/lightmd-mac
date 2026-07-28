@@ -30,6 +30,8 @@ enum LightMDIcon {
     case checkmark
     case eraser
     case palette
+    case sidebarRight
+    case sidebarLeft
 }
 
 struct AppIcon: View {
@@ -67,6 +69,8 @@ struct AppIcon: View {
             case .checkmark: symbol("checkmark")
             case .eraser: symbol("eraser")
             case .palette: symbol("paintpalette")
+            case .sidebarRight: symbol("sidebar.right")
+            case .sidebarLeft: symbol("sidebar.left")
             }
         }
         .frame(width: size, height: size)

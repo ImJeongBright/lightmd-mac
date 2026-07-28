@@ -2,12 +2,14 @@ import SwiftUI
 
 struct FolderDocsSidebarView: View {
     @EnvironmentObject private var viewModel: MarkdownViewModel
+    @EnvironmentObject private var appearance: ReaderAppearanceSettings
     @Environment(\.openWindow) private var openWindow
     @Environment(\.colorScheme) private var colorScheme
     @State private var expandedNodeIDs: Set<String> = []
+    @State private var hoveredNodeID: String?
 
-    private var palette: DesignPalette {
-        DesignSystem.palette(for: colorScheme)
+    private var colors: AppColors {
+        appearance.resolvedColors(for: colorScheme)
     }
 
     var body: some View {
@@ -26,7 +28,7 @@ struct FolderDocsSidebarView: View {
         .padding(.vertical, 14)
         .frame(width: 220)
         .frame(maxHeight: .infinity, alignment: .top)
-        .background(palette.appBackground)
+        .background(colors.sidebarBackground)
         .onAppear {
             expandRootNodes()
         }
@@ -35,7 +37,7 @@ struct FolderDocsSidebarView: View {
         }
         .overlay(alignment: .trailing) {
             Rectangle()
-                .fill(palette.border)
+                .fill(colors.divider)
                 .frame(width: 1)
         }
     }
@@ -44,12 +46,12 @@ struct FolderDocsSidebarView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Docs")
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(palette.secondaryText)
+                .foregroundStyle(colors.tertiaryText)
                 .textCase(.uppercase)
 
             Text(viewModel.folderName)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(palette.primaryText)
+                .foregroundStyle(colors.primaryText)
                 .lineLimit(1)
         }
         .padding(.horizontal, 4)
@@ -64,17 +66,17 @@ struct FolderDocsSidebarView: View {
                     HStack(spacing: 7) {
                         Image(systemName: isExpanded(node) ? "chevron.down" : "chevron.right")
                             .font(.system(size: 9, weight: .semibold))
-                            .foregroundStyle(palette.mutedText)
+                            .foregroundStyle(colors.tertiaryText)
                             .frame(width: 11)
 
                         Image(systemName: isExpanded(node) ? "folder.fill" : "folder")
                             .font(.system(size: 12))
-                            .foregroundStyle(palette.secondaryText)
+                            .foregroundStyle(colors.secondaryText)
                             .frame(width: 16)
 
                         Text(node.name)
                             .font(.system(size: 13, weight: level == 0 ? .medium : .regular))
-                            .foregroundStyle(palette.primaryText)
+                            .foregroundStyle(colors.primaryText)
                             .lineLimit(1)
                             .truncationMode(.middle)
 
@@ -93,18 +95,20 @@ struct FolderDocsSidebarView: View {
                 }
             })
         } else {
+            let isFileSelected = isSelected(node)
+            let isFileHovered = hoveredNodeID == node.id
             return AnyView(Button {
                 viewModel.selectFile(node.url)
             } label: {
                 HStack(spacing: 7) {
                     Image(systemName: "doc.text")
                         .font(.system(size: 12))
-                        .foregroundStyle(isSelected(node) ? palette.primaryText : palette.mutedText)
+                        .foregroundStyle(isFileSelected ? colors.accent : colors.tertiaryText)
                         .frame(width: 16)
 
                     Text(node.name)
                         .font(.system(size: 13))
-                        .foregroundStyle(isSelected(node) ? palette.primaryText : palette.secondaryText)
+                        .foregroundStyle(isFileSelected ? colors.primaryText : colors.secondaryText)
                         .lineLimit(1)
                         .truncationMode(.middle)
 
@@ -115,10 +119,13 @@ struct FolderDocsSidebarView: View {
                 .padding(.vertical, 7)
                 .background(
                     RoundedRectangle(cornerRadius: 6)
-                        .fill(isSelected(node) ? palette.toolbarControlBackground : Color.clear)
+                        .fill(isFileSelected ? colors.accentSoft : (isFileHovered ? colors.hoverBackground : Color.clear))
                 )
             }
             .buttonStyle(.plain)
+            .onHover { hovering in
+                hoveredNodeID = hovering ? node.id : nil
+            }
             .contextMenu {
                 Button("오른쪽 창에서 열기") {
                     viewModel.openInRightPane(node.url)

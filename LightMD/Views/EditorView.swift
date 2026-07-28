@@ -2,16 +2,17 @@ import SwiftUI
 
 struct EditorView: View {
     @EnvironmentObject private var viewModel: MarkdownViewModel
+    @EnvironmentObject private var appearance: ReaderAppearanceSettings
     @Environment(\.colorScheme) private var colorScheme
     @State private var localText: String = ""
 
-    private var palette: DesignPalette {
-        DesignSystem.palette(for: colorScheme)
+    private var colors: AppColors {
+        appearance.resolvedColors(for: colorScheme)
     }
 
     var body: some View {
         ZStack {
-            palette.appBackground
+            colors.readerBackground
                 .ignoresSafeArea()
 
             TextEditor(text: $localText)
@@ -29,13 +30,12 @@ struct EditorView: View {
                 }
             }
             .font(MarkdownStyle.editorFont)
-            .foregroundStyle(palette.primaryText)
+            .foregroundStyle(colors.primaryText)
             .scrollContentBackground(.hidden)
             .padding(.horizontal, DesignSystem.readerHorizontalPadding)
             .padding(.vertical, DesignSystem.readerVerticalPadding)
             .frame(maxWidth: DesignSystem.editorMaxWidth)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(palette.editorSurface)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

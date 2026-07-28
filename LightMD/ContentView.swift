@@ -33,8 +33,8 @@ struct ContentView: View {
         selectedTheme.colorScheme ?? colorScheme
     }
 
-    private var palette: DesignPalette {
-        DesignSystem.palette(for: effectiveColorScheme)
+    private var colors: AppColors {
+        appearance.resolvedColors(for: effectiveColorScheme)
     }
 
     var body: some View {
@@ -64,7 +64,7 @@ struct ContentView: View {
         .onChange(of: undoManager) { manager in
             viewModel.undoManager = manager
         }
-        .background(palette.appBackground)
+        .background(colors.appBackground)
         .preferredColorScheme(selectedTheme.colorScheme)
         .environmentObject(viewModel)
         .environmentObject(appearance)
@@ -181,7 +181,7 @@ struct ContentView: View {
 
             OutlineSidebarView(navigationRequest: $viewModel.headingNavigationRequest)
         }
-        .background(palette.appBackground)
+        .background(colors.appBackground)
     }
 
     @ViewBuilder

@@ -2,14 +2,15 @@ import SwiftUI
 
 struct ReferencePaneView: View {
     @EnvironmentObject private var viewModel: MarkdownViewModel
+    @EnvironmentObject private var appearance: ReaderAppearanceSettings
     @Environment(\.colorScheme) private var colorScheme
     @State private var navigationRequest: HeadingNavigationRequest?
 
     let pane: ReaderPaneState
     let onClose: () -> Void
 
-    private var palette: DesignPalette {
-        DesignSystem.palette(for: colorScheme)
+    private var colors: AppColors {
+        appearance.resolvedColors(for: colorScheme)
     }
 
     var body: some View {
@@ -28,10 +29,10 @@ struct ReferencePaneView: View {
             )
             .id("\(pane.currentFileURL.standardizedFileURL.path)-\(pane.activeHeadingID ?? "top")")
         }
-        .background(palette.appBackground)
+        .background(colors.readerBackground)
         .overlay(alignment: .leading) {
             Rectangle()
-                .fill(palette.border)
+                .fill(colors.divider)
                 .frame(width: 1)
         }
         .onAppear {
@@ -46,17 +47,17 @@ struct ReferencePaneView: View {
         HStack(spacing: 8) {
             Image(systemName: "sidebar.right")
                 .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(colors.accent)
 
             VStack(alignment: .leading, spacing: 1) {
                 Text("Reference")
                     .font(.caption2)
-                    .foregroundStyle(palette.mutedText)
+                    .foregroundStyle(colors.tertiaryText)
                     .textCase(.uppercase)
 
                 Text(pane.title)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(palette.primaryText)
+                    .foregroundStyle(colors.primaryText)
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
@@ -71,7 +72,7 @@ struct ReferencePaneView: View {
                         .font(.system(size: 11, weight: .semibold))
                 }
                 .buttonStyle(.plain)
-                .foregroundStyle(viewModel.canNavigateReferenceBack ? palette.primaryText : palette.mutedText)
+                .foregroundStyle(viewModel.canNavigateReferenceBack ? colors.primaryText : colors.tertiaryText)
                 .disabled(!viewModel.canNavigateReferenceBack)
                 .help("Go Back (Reference)")
 
@@ -82,7 +83,7 @@ struct ReferencePaneView: View {
                         .font(.system(size: 11, weight: .semibold))
                 }
                 .buttonStyle(.plain)
-                .foregroundStyle(viewModel.canNavigateReferenceForward ? palette.primaryText : palette.mutedText)
+                .foregroundStyle(viewModel.canNavigateReferenceForward ? colors.primaryText : colors.tertiaryText)
                 .disabled(!viewModel.canNavigateReferenceForward)
                 .help("Go Forward (Reference)")
             }
@@ -97,15 +98,15 @@ struct ReferencePaneView: View {
                     .frame(width: 24, height: 24)
             }
             .buttonStyle(.plain)
-            .foregroundStyle(palette.secondaryText)
+            .foregroundStyle(colors.secondaryText)
             .help("Close Reference Pane")
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 9)
-        .background(.thinMaterial)
+        .background(colors.sidebarBackground)
         .overlay(alignment: .bottom) {
             Rectangle()
-                .fill(palette.border)
+                .fill(colors.divider)
                 .frame(height: 1)
         }
     }

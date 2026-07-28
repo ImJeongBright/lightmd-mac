@@ -8,8 +8,8 @@ struct ToolbarView: View {
     @Binding var selectedThemeRaw: String
     @State private var isShowingAppearanceSettings = false
 
-    private var palette: DesignPalette {
-        DesignSystem.palette(for: colorScheme)
+    private var colors: AppColors {
+        appearance.resolvedColors(for: colorScheme)
     }
 
     var body: some View {
@@ -101,10 +101,10 @@ struct ToolbarView: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .frame(height: 58)
-        .background(.regularMaterial)
+        .background(colors.sidebarBackground)
         .overlay(alignment: .bottom) {
             Rectangle()
-                .fill(palette.border)
+                .fill(colors.divider)
                 .frame(height: 1)
         }
     }
@@ -112,41 +112,41 @@ struct ToolbarView: View {
     private var fileStatus: some View {
         HStack(spacing: 8) {
             Image(systemName: viewModel.mode.statusIcon)
-                .foregroundStyle(viewModel.document == nil ? palette.mutedText : Color.accentColor)
+                .foregroundStyle(viewModel.document == nil ? colors.tertiaryText : colors.accent)
                 .frame(width: 18)
 
             Text(viewModel.currentFileName)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(viewModel.document == nil ? palette.secondaryText : palette.primaryText)
+                .foregroundStyle(viewModel.document == nil ? colors.secondaryText : colors.primaryText)
                 .lineLimit(1)
 
             if viewModel.isDocumentEdited {
                 HStack(spacing: 5) {
                     Circle()
-                        .fill(Color.accentColor)
+                        .fill(colors.accent)
                         .frame(width: 6, height: 6)
 
                     Text("Edited")
                         .font(.caption2)
                 }
-                .foregroundStyle(palette.secondaryText)
+                .foregroundStyle(colors.secondaryText)
                 .padding(.horizontal, 7)
                 .padding(.vertical, 3)
                 .background(
                     Capsule()
-                        .fill(palette.badgeBackground)
+                        .fill(colors.secondarySurface)
                 )
             }
 
             if viewModel.document != nil {
                 Text(viewModel.mode.statusTitle)
                     .font(.caption2)
-                    .foregroundStyle(palette.secondaryText)
+                    .foregroundStyle(colors.secondaryText)
                     .padding(.horizontal, 7)
                     .padding(.vertical, 3)
                     .background(
                         Capsule()
-                            .fill(palette.toolbarControlBackground)
+                            .fill(colors.hoverBackground)
                     )
             }
         }

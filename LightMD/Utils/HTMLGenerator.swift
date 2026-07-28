@@ -60,90 +60,60 @@ enum HTMLGenerator {
     }
 
     private static func generateCSS(for app: ReaderAppearanceSettings.Settings) -> String {
-        // Theme Colors
-        // Define color palettes
-        let lightVars = """
-            --text-color: #333333;
-            --bg-color: transparent;
-            --link-color: #0066cc;
-            --code-bg: #f5f5f5;
-            --border-color: #e0e0e0;
-            --quote-border: #0066cc;
-            --quote-bg: #f9f9f9;
-            --highlight-bg: rgba(255, 214, 10, 0.35);
-            --underline-color: rgba(200, 130, 20, 0.9);
-            --memo-bg: rgba(90, 200, 120, 0.2);
-        """
-        
-        let darkVars = """
-            --text-color: #e0e0e0;
-            --bg-color: transparent;
-            --link-color: #4da6ff;
-            --code-bg: #2d2d2d;
-            --border-color: #404040;
-            --quote-border: #4da6ff;
-            --quote-bg: #2a2a2a;
-            --highlight-bg: rgba(255, 214, 10, 0.25);
-            --underline-color: rgba(220, 160, 40, 0.9);
-            --memo-bg: rgba(90, 200, 120, 0.15);
-        """
-        
-        let sepiaVars = """
-            --text-color: #433422;
-            --bg-color: #f4ecd8;
-            --link-color: #b35900;
-            --code-bg: #eaddc2;
-            --border-color: #d8c3a5;
-            --quote-border: #b35900;
-            --quote-bg: #eaddc2;
-            --highlight-bg: rgba(255, 214, 10, 0.45);
-            --underline-color: rgba(200, 130, 20, 0.9);
-            --memo-bg: rgba(90, 200, 120, 0.2);
-        """
-        
-        let solarizedVars = """
-            --text-color: #839496;
-            --bg-color: #002b36;
-            --link-color: #268bd2;
-            --code-bg: #073642;
-            --border-color: #586e75;
-            --quote-border: #2aa198;
-            --quote-bg: #073642;
-            --highlight-bg: rgba(181, 137, 0, 0.35);
-            --underline-color: rgba(203, 75, 22, 0.9);
-            --memo-bg: rgba(133, 153, 0, 0.2);
-        """
-        
-        let themeVars: String
-        let darkThemeVars: String
-        
-        switch app.documentTheme {
-        case .light:
-            themeVars = lightVars
-            darkThemeVars = lightVars // override media query
-        case .dark:
-            themeVars = darkVars
-            darkThemeVars = darkVars
-        case .sepia:
-            themeVars = sepiaVars
-            darkThemeVars = sepiaVars
-        case .solarizedDark:
-            themeVars = solarizedVars
-            darkThemeVars = solarizedVars
-        case .system:
-            themeVars = lightVars
-            darkThemeVars = darkVars
+        // Resolve colors for light and dark schemes
+        let light = DesignSystem.colors(
+            theme: app.readerTheme,
+            accent: app.accentPreset,
+            textColor: app.textColorPreset,
+            highlight: app.highlightPreset,
+            colorScheme: .light
+        )
+        let dark = DesignSystem.colors(
+            theme: app.readerTheme,
+            accent: app.accentPreset,
+            textColor: app.textColorPreset,
+            highlight: app.highlightPreset,
+            colorScheme: .dark
+        )
+
+        // For explicit dark/midnight themes, use same palette for both
+        let isExplicitDark = app.readerTheme.isDark
+
+        func vars(_ c: AppColors) -> String {
+            return """
+                --app-bg: \(c.cssAppBg);
+                --reader-bg: \(c.cssReaderBg);
+                --text-color: \(c.cssPrimaryText);
+                --text-secondary: \(c.cssSecondaryText);
+                --bg-color: transparent;
+                --link-color: \(c.cssAccent);
+                --code-bg: \(c.cssCodeBg);
+                --border-color: \(c.cssBorder);
+                --divider-color: \(c.cssDivider);
+                --surface-secondary: \(c.cssSecondarySurface);
+                --quote-border: \(c.cssAccent);
+                --quote-bg: \(c.cssBlockquoteBg);
+                --table-header-bg: \(c.cssTableHeaderBg);
+                --accent: \(c.cssAccent);
+                --accent-soft: \(c.cssAccentSoft);
+                --highlight-bg: \(c.cssHighlightBg);
+                --underline-color: \(c.cssUnderlineColor);
+                --memo-bg: \(c.cssMemoBg);
+            """
         }
-        
+
+        let lightVars = isExplicitDark ? vars(dark) : vars(light)
+        let darkVars = vars(dark)
+
         let css = """
         <style>
             :root {
                 color-scheme: light dark;
-                \(themeVars)
+                \(lightVars)
             }
             @media (prefers-color-scheme: dark) {
                 :root {
-                    \(darkThemeVars)
+                    \(darkVars)
                 }
             }
             body {
@@ -183,17 +153,17 @@ enum HTMLGenerator {
             }
             pre code { background-color: transparent; padding: 0; }
             blockquote {
-                border-left: 4px solid var(--quote-border);
+                border-left: 3px solid var(--accent);
                 background-color: var(--quote-bg);
                 padding: 10px 16px;
                 margin-left: 0;
                 margin-right: 0;
-                border-radius: 0 6px 6px 0;
+                border-radius: 0 4px 4px 0;
             }
             table { border-collapse: collapse; width: 100%; display: block; overflow: auto; }
             th, td { border: 1px solid var(--border-color); padding: 8px 12px; }
-            th { background-color: var(--code-bg); font-weight: 600; text-align: left; }
-            hr { border: 0; border-bottom: 1px solid var(--border-color); margin: 24px 0; }
+            th { background-color: var(--table-header-bg); font-weight: 600; text-align: left; }
+            hr { border: 0; border-bottom: 1px solid var(--divider-color); margin: 24px 0; }
             .task-list-item { list-style-type: none; display: flex; align-items: center; gap: 8px; }
             .task-list-item input { margin: 0; }
             ul, ol { padding-left: 30px; }

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ReaderView: View {
     @EnvironmentObject private var viewModel: MarkdownViewModel
+    @EnvironmentObject private var appearance: ReaderAppearanceSettings
     @Environment(\.colorScheme) private var colorScheme
     @ObservedObject var annotationStore: AnnotationStore
 
@@ -13,13 +14,13 @@ struct ReaderView: View {
     var maxContentWidth = DesignSystem.readerMaxWidth
     var outerHorizontalPadding: CGFloat = 30
 
-    private var palette: DesignPalette {
-        DesignSystem.palette(for: colorScheme)
+    private var colors: AppColors {
+        appearance.resolvedColors(for: colorScheme)
     }
 
     var body: some View {
         ZStack {
-            palette.appBackground
+            colors.readerBackground
                 .ignoresSafeArea()
 
             HTMLReaderView(
@@ -32,7 +33,6 @@ struct ReaderView: View {
             .padding(.horizontal, DesignSystem.readerHorizontalPadding)
             .padding(.vertical, DesignSystem.readerVerticalPadding)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(palette.documentSurface)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

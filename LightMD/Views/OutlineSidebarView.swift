@@ -2,11 +2,12 @@ import SwiftUI
 
 struct OutlineSidebarView: View {
     @EnvironmentObject private var viewModel: MarkdownViewModel
+    @EnvironmentObject private var appearance: ReaderAppearanceSettings
     @Environment(\.colorScheme) private var colorScheme
     @Binding var navigationRequest: HeadingNavigationRequest?
 
-    private var palette: DesignPalette {
-        DesignSystem.palette(for: colorScheme)
+    private var colors: AppColors {
+        appearance.resolvedColors(for: colorScheme)
     }
 
     var body: some View {
@@ -16,7 +17,7 @@ struct OutlineSidebarView: View {
             if viewModel.outlineHeadings.isEmpty {
                 Text("No headings")
                     .font(.caption)
-                    .foregroundStyle(palette.mutedText)
+                    .foregroundStyle(colors.tertiaryText)
                     .padding(.horizontal, 4)
             } else {
                 ScrollView {
@@ -32,10 +33,10 @@ struct OutlineSidebarView: View {
         .padding(.vertical, 14)
         .frame(width: 220)
         .frame(maxHeight: .infinity, alignment: .top)
-        .background(palette.appBackground)
+        .background(colors.sidebarBackground)
         .overlay(alignment: .leading) {
             Rectangle()
-                .fill(palette.border)
+                .fill(colors.divider)
                 .frame(width: 1)
         }
     }
@@ -44,7 +45,7 @@ struct OutlineSidebarView: View {
         HStack {
             Text("Outline")
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(palette.secondaryText)
+                .foregroundStyle(colors.tertiaryText)
                 .textCase(.uppercase)
 
             Spacer()
@@ -52,12 +53,12 @@ struct OutlineSidebarView: View {
             if !viewModel.outlineHeadings.isEmpty {
                 Text("\(viewModel.outlineHeadings.count)")
                     .font(.caption2)
-                    .foregroundStyle(palette.mutedText)
+                    .foregroundStyle(colors.tertiaryText)
                     .padding(.horizontal, 7)
                     .padding(.vertical, 3)
                     .background(
                         Capsule()
-                            .fill(palette.badgeBackground)
+                            .fill(colors.secondarySurface)
                     )
             }
         }
@@ -72,12 +73,12 @@ struct OutlineSidebarView: View {
             } label: {
                 HStack(spacing: 7) {
                     Rectangle()
-                        .fill(heading.id == viewModel.activeHeadingID ? Color.accentColor : Color.clear)
+                        .fill(heading.id == viewModel.activeHeadingID ? colors.accent : Color.clear)
                         .frame(width: 2)
 
                     Text(heading.title)
                         .font(.system(size: fontSize(for: heading.level), weight: heading.level == 1 ? .medium : .regular))
-                        .foregroundStyle(heading.id == viewModel.activeHeadingID ? palette.primaryText : palette.secondaryText)
+                        .foregroundStyle(heading.id == viewModel.activeHeadingID ? colors.primaryText : colors.secondaryText)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
 
@@ -88,7 +89,7 @@ struct OutlineSidebarView: View {
                 .padding(.trailing, 2)
                 .background(
                     RoundedRectangle(cornerRadius: 7)
-                        .fill(heading.id == viewModel.activeHeadingID ? Color.accentColor.opacity(0.12) : Color.clear)
+                        .fill(heading.id == viewModel.activeHeadingID ? colors.accentSoft : Color.clear)
                 )
             }
             .buttonStyle(.plain)
@@ -98,7 +99,7 @@ struct OutlineSidebarView: View {
             } label: {
                 Image(systemName: viewModel.isFavoriteHeading(heading) ? "star.fill" : "star")
                     .font(.system(size: 11))
-                    .foregroundStyle(viewModel.isFavoriteHeading(heading) ? Color.accentColor : palette.mutedText)
+                    .foregroundStyle(viewModel.isFavoriteHeading(heading) ? colors.accent : colors.tertiaryText)
                     .frame(width: 20, height: 20)
             }
             .buttonStyle(.plain)

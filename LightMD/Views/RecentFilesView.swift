@@ -3,16 +3,17 @@ import SwiftUI
 struct RecentFilesView: View {
     @EnvironmentObject private var viewModel: MarkdownViewModel
     @EnvironmentObject private var workspaceViewModel: WorkspaceViewModel
+    @EnvironmentObject private var appearance: ReaderAppearanceSettings
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.openWindow) private var openWindow
 
-    private var palette: DesignPalette {
-        DesignSystem.palette(for: colorScheme)
+    private var colors: AppColors {
+        appearance.resolvedColors(for: colorScheme)
     }
 
     var body: some View {
         ZStack {
-            palette.appBackground
+            colors.appBackground
                 .ignoresSafeArea()
 
             VStack(alignment: .leading, spacing: 20) {
@@ -20,11 +21,11 @@ struct RecentFilesView: View {
                     VStack(alignment: .leading, spacing: 5) {
                         Text("LightMD")
                             .font(.system(size: 30, weight: .semibold))
-                            .foregroundStyle(palette.primaryText)
+                            .foregroundStyle(colors.primaryText)
 
                         Text("Open a local Markdown file to start reading.")
                             .font(.callout)
-                            .foregroundStyle(palette.secondaryText)
+                            .foregroundStyle(colors.secondaryText)
                     }
 
                     Spacer()
@@ -51,7 +52,7 @@ struct RecentFilesView: View {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Recent Files")
                             .font(.headline)
-                            .foregroundStyle(palette.primaryText)
+                            .foregroundStyle(colors.primaryText)
 
                         VStack(spacing: 0) {
                             ForEach(viewModel.recentFiles, id: \.path) { url in
@@ -60,18 +61,18 @@ struct RecentFilesView: View {
                                 } label: {
                                     HStack(spacing: 11) {
                                         Image(systemName: "doc.text")
-                                            .foregroundStyle(palette.secondaryText)
+                                            .foregroundStyle(colors.secondaryText)
                                             .frame(width: 22)
 
                                         VStack(alignment: .leading, spacing: 3) {
                                             Text(url.lastPathComponent)
                                                 .font(.system(size: 14, weight: .medium))
-                                                .foregroundStyle(palette.primaryText)
+                                                .foregroundStyle(colors.primaryText)
                                                 .lineLimit(1)
 
                                             Text(url.deletingLastPathComponent().path)
                                                 .font(.caption)
-                                                .foregroundStyle(palette.mutedText)
+                                                .foregroundStyle(colors.tertiaryText)
                                                 .lineLimit(1)
                                         }
 
@@ -92,17 +93,17 @@ struct RecentFilesView: View {
 
                                 if url != viewModel.recentFiles.last {
                                     Divider()
-                                        .overlay(palette.subtleBorder)
+                                        .overlay(colors.divider)
                                 }
                             }
                         }
                         .background(
                             RoundedRectangle(cornerRadius: DesignSystem.controlCornerRadius)
-                                .fill(palette.codeBackground.opacity(0.62))
+                                .fill(colors.secondarySurface)
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: DesignSystem.controlCornerRadius)
-                                .stroke(palette.subtleBorder, lineWidth: 1)
+                                .stroke(colors.border, lineWidth: 1)
                         )
                     }
                 }
@@ -113,12 +114,11 @@ struct RecentFilesView: View {
             .padding(36)
             .background(
                 RoundedRectangle(cornerRadius: DesignSystem.documentCornerRadius)
-                    .fill(palette.documentSurface)
-                    .shadow(color: palette.cardShadow, radius: 16, y: 8)
+                    .fill(colors.readerBackground)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DesignSystem.documentCornerRadius)
-                    .stroke(palette.subtleBorder, lineWidth: 1)
+                    .stroke(colors.border, lineWidth: 1)
             )
             .padding(30)
         }

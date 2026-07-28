@@ -31,16 +31,6 @@ enum LineSpacing: String, CaseIterable, Codable {
     }
 }
 
-enum DocumentTheme: String, CaseIterable, Codable {
-    case system = "System"
-    case light = "Light"
-    case dark = "Dark"
-    case sepia = "Sepia"
-    case solarizedDark = "Solarized"
-    
-    var label: String { self.rawValue }
-}
-
 enum ContentWidth: String, CaseIterable, Codable {
     case narrow = "Narrow"
     case medium = "Medium"
@@ -63,10 +53,13 @@ final class ReaderAppearanceSettings: ObservableObject {
     
     struct Settings: Codable, Equatable {
         var fontFamily: FontFamily = .system
-        var fontSizeBase: Int = 15 // base pixel size
+        var fontSizeBase: Int = 15
         var lineSpacing: LineSpacing = .normal
-        var documentTheme: DocumentTheme = .system
         var contentWidth: ContentWidth = .medium
+        var readerTheme: ReaderTheme = .clean
+        var accentPreset: AccentPreset = .blue
+        var textColorPreset: TextColorPreset = .charcoal
+        var highlightPreset: HighlightPreset = .yellow
     }
     
     @Published var current: Settings {
@@ -105,5 +98,16 @@ final class ReaderAppearanceSettings: ObservableObject {
     
     func reset() {
         current = Settings()
+    }
+
+    /// Resolve the full AppColors for the current settings + system color scheme
+    func resolvedColors(for colorScheme: ColorScheme) -> AppColors {
+        DesignSystem.colors(
+            theme: current.readerTheme,
+            accent: current.accentPreset,
+            textColor: current.textColorPreset,
+            highlight: current.highlightPreset,
+            colorScheme: colorScheme
+        )
     }
 }

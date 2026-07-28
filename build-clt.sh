@@ -36,6 +36,9 @@ swiftc \
   "$PROJECT_DIR/LightMD/Design/MarkdownStyle.swift" \
   "$PROJECT_DIR/LightMD/Views/Components/QuietIconButton.swift" \
   "$PROJECT_DIR/LightMD/Views/Components/LightMDIcon.swift" \
+  "$PROJECT_DIR/LightMD/Design/SceneTheme+Factory.swift" \
+  "$PROJECT_DIR/LightMD/Models/SceneTheme.swift" \
+  "$PROJECT_DIR/LightMD/Views/ThemeBackgroundView.swift" \
   "$PROJECT_DIR/LightMD/Models/DocumentLocation.swift" \
   "$PROJECT_DIR/LightMD/Models/DocumentWindowRequest.swift" \
   "$PROJECT_DIR/LightMD/Models/FileTreeNode.swift" \

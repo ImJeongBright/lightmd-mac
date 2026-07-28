@@ -34,7 +34,11 @@ struct RecentFilesView: View {
                         Button {
                             viewModel.openWithPanel()
                         } label: {
-                            Label("Open", systemImage: "folder")
+                            Label {
+                                Text("Open")
+                            } icon: {
+                                AppIcon(icon: .folder, size: 16)
+                            }
                         }
                         .buttonStyle(.borderedProminent)
                         .controlSize(.large)
@@ -42,7 +46,11 @@ struct RecentFilesView: View {
                         Button {
                             workspaceViewModel.openFolderWithPanel()
                         } label: {
-                            Label("Folder", systemImage: "folder.badge.plus")
+                            Label {
+                                Text("Folder")
+                            } icon: {
+                                AppIcon(icon: .workspace, size: 16)
+                            }
                         }
                         .controlSize(.large)
                     }
@@ -60,7 +68,7 @@ struct RecentFilesView: View {
                                     viewModel.openRecent(url)
                                 } label: {
                                     HStack(spacing: 11) {
-                                        Image(systemName: "doc.text")
+                                        AppIcon(icon: .page, size: 18)
                                             .foregroundStyle(colors.secondaryText)
                                             .frame(width: 22)
 

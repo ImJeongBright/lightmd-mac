@@ -9,23 +9,22 @@ struct FolderTabBarView: View {
     private var colors: AppColors {
         appearance.resolvedColors(for: colorScheme)
     }
-    
+
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 0) {
                 ForEach(workspaceViewModel.tabs) { tab in
                     tabView(for: tab)
                 }
-                
+
                 Button(action: {
                     workspaceViewModel.openFolderWithPanel()
                 }) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 11))
+                    AppIcon(icon: .plus, size: 12)
                         .foregroundStyle(colors.tertiaryText)
                         .padding(6)
                         .background(
-                            RoundedRectangle(cornerRadius: 5)
+                            RoundedRectangle(cornerRadius: IconMetrics.cornerRadius)
                                 .fill(colors.hoverBackground)
                         )
                 }
@@ -42,30 +41,28 @@ struct FolderTabBarView: View {
                 .frame(height: 1)
         }
     }
-    
+
     @ViewBuilder
     private func tabView(for tab: WorkspaceTab) -> some View {
         let isSelected = workspaceViewModel.selectedTabID == tab.id
         let isHovered = hoveredTabID == tab.id
-        
+
         VStack(spacing: 0) {
             HStack(spacing: 6) {
-                Image(systemName: "folder")
-                    .font(.system(size: 11))
+                AppIcon(icon: .workspace, size: IconMetrics.sidebarSize)
                     .foregroundStyle(isSelected ? colors.accent : colors.tertiaryText)
-                
+
                 Text(tab.title)
                     .font(.system(size: 13, weight: isSelected ? .medium : .regular))
                     .foregroundStyle(isSelected ? colors.primaryText : colors.secondaryText)
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .frame(maxWidth: 150)
-                
+
                 Button(action: {
                     workspaceViewModel.closeTab(tab.id)
                 }) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 9, weight: .medium))
+                    AppIcon(icon: .close, size: 10)
                         .foregroundStyle(isHovered ? colors.secondaryText : Color.clear)
                         .padding(3)
                         .background(
@@ -78,10 +75,10 @@ struct FolderTabBarView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 7)
             .background(
-                RoundedRectangle(cornerRadius: 5)
+                RoundedRectangle(cornerRadius: IconMetrics.cornerRadius)
                     .fill(isHovered && !isSelected ? colors.hoverBackground : Color.clear)
             )
-            
+
             // Accent underline for selected tab
             Rectangle()
                 .fill(isSelected ? colors.accent : Color.clear)

@@ -13,145 +13,94 @@ struct ToolbarView: View {
     }
 
     var body: some View {
-        HStack(spacing: 10) {
-            Button {
+        HStack(spacing: 4) {
+            QuietIconButton(icon: .chevronLeft, tooltip: "Back", shortcut: "⌘[", isSelected: false, isDisabled: !viewModel.canNavigateBack) {
                 viewModel.navigateBack()
-            } label: {
-                Label("Back", systemImage: "chevron.left")
-                    .labelStyle(.iconOnly)
             }
-            .disabled(!viewModel.canNavigateBack)
-            .help("Back")
-
-            Button {
+            QuietIconButton(icon: .chevronRight, tooltip: "Forward", shortcut: "⌘]", isSelected: false, isDisabled: !viewModel.canNavigateForward) {
                 viewModel.navigateForward()
-            } label: {
-                Label("Forward", systemImage: "chevron.right")
-                    .labelStyle(.iconOnly)
             }
-            .disabled(!viewModel.canNavigateForward)
-            .help("Forward")
-
-            Divider()
-                .frame(height: 24)
-
-            Button {
-                viewModel.openWithPanel()
-            } label: {
-                Label("Open", systemImage: "folder")
-            }
-            .help("Open Markdown file")
-
-            Button {
-                workspaceViewModel.openFolderWithPanel()
-            } label: {
-                Label("Folder", systemImage: "folder.badge.plus")
-            }
-            .help("Open Markdown folder")
-
-            Divider()
-                .frame(height: 24)
-
-            Button {
-                viewModel.toggleMode()
-            } label: {
-                Label(viewModel.mode.toggleTitle, systemImage: viewModel.mode.toggleIcon)
-            }
-            .disabled(viewModel.document == nil)
-            .help("Toggle Preview/Edit")
-
-            Button {
-                viewModel.save()
-            } label: {
-                Label("Save", systemImage: "square.and.arrow.down")
-            }
-            .disabled(!viewModel.canSave)
-            .help("Save")
-
+            
             Spacer(minLength: 16)
-
-            fileStatus
-
+            
+            // Breadcrumb / Status
+            HStack(spacing: 8) {
+                if viewModel.document == nil {
+                    Text(viewModel.currentFileName)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(colors.secondaryText)
+                } else {
+                    // Document status
+                    Text(viewModel.currentFileName)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(colors.primaryText)
+                        .lineLimit(1)
+                    
+                    if viewModel.isDocumentEdited {
+                        Text("Edited")
+                            .font(.caption2)
+                            .foregroundStyle(colors.secondaryText)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Capsule().fill(colors.secondarySurface))
+                    }
+                    Text(viewModel.mode.statusTitle)
+                        .font(.caption2)
+                        .foregroundStyle(colors.secondaryText)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Capsule().fill(colors.hoverBackground))
+                }
+            }
+            
             Spacer(minLength: 16)
-
+            
+            // Right controls
+            if viewModel.document != nil {
+                QuietIconButton(
+                    icon: viewModel.mode == .reader ? .textFormat : .search,
+                    text: viewModel.mode == .reader ? "Edit" : "Preview",
+                    tooltip: "Toggle Mode"
+                ) {
+                    viewModel.toggleMode()
+                }
+                
+                QuietIconButton(icon: .search, tooltip: "Search") {
+                    /* placeholder for search */
+                }
+            }
+            
             Menu {
+                Button("Open Markdown File...") { viewModel.openWithPanel() }
+                Button("Open Folder Workspace...") { workspaceViewModel.openFolderWithPanel() }
+                Divider()
+                if viewModel.canSave {
+                    Button("Save") { viewModel.save() }
+                }
+                Divider()
                 Picker("Theme", selection: $selectedThemeRaw) {
                     ForEach(AppTheme.allCases) { theme in
-                        Label(theme.title, systemImage: theme.icon)
-                            .tag(theme.rawValue)
+                        Text(theme.title).tag(theme.rawValue)
                     }
                 }
+                Button("Appearance Settings") { isShowingAppearanceSettings = true }
             } label: {
-                Label("Theme", systemImage: "circle.lefthalf.filled")
+                AppIcon(icon: .more, size: IconMetrics.toolbarSize)
+                    .frame(width: IconMetrics.controlFrame, height: IconMetrics.controlFrame)
+                    .contentShape(Rectangle())
             }
-            .help("Theme")
-            
-            Button {
-                isShowingAppearanceSettings = true
-            } label: {
-                Label("Appearance", systemImage: "textformat.size")
-            }
-            .help("Reader Appearance Settings")
+            .menuStyle(.borderlessButton)
+            .fixedSize()
             .popover(isPresented: $isShowingAppearanceSettings, arrowEdge: .bottom) {
                 AppearanceSettingsView(settings: appearance)
             }
         }
-        .buttonStyle(.bordered)
-        .controlSize(.regular)
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-        .frame(height: 58)
+        .frame(height: 48)
         .background(colors.sidebarBackground)
         .overlay(alignment: .bottom) {
-            Rectangle()
-                .fill(colors.divider)
-                .frame(height: 1)
+            Rectangle().fill(colors.divider).frame(height: 1)
         }
-    }
-
-    private var fileStatus: some View {
-        HStack(spacing: 8) {
-            Image(systemName: viewModel.mode.statusIcon)
-                .foregroundStyle(viewModel.document == nil ? colors.tertiaryText : colors.accent)
-                .frame(width: 18)
-
-            Text(viewModel.currentFileName)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(viewModel.document == nil ? colors.secondaryText : colors.primaryText)
-                .lineLimit(1)
-
-            if viewModel.isDocumentEdited {
-                HStack(spacing: 5) {
-                    Circle()
-                        .fill(colors.accent)
-                        .frame(width: 6, height: 6)
-
-                    Text("Edited")
-                        .font(.caption2)
-                }
-                .foregroundStyle(colors.secondaryText)
-                .padding(.horizontal, 7)
-                .padding(.vertical, 3)
-                .background(
-                    Capsule()
-                        .fill(colors.secondarySurface)
-                )
-            }
-
-            if viewModel.document != nil {
-                Text(viewModel.mode.statusTitle)
-                    .font(.caption2)
-                    .foregroundStyle(colors.secondaryText)
-                    .padding(.horizontal, 7)
-                    .padding(.vertical, 3)
-                    .background(
-                        Capsule()
-                            .fill(colors.hoverBackground)
-                    )
-            }
-        }
-        .frame(maxWidth: 360)
-        .layoutPriority(1)
-        .accessibilityElement(children: .combine)
     }
 }

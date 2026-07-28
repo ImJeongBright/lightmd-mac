@@ -32,7 +32,10 @@ swiftc \
   "$PROJECT_DIR/LightMD/ContentView.swift" \
   "$PROJECT_DIR/LightMD/Design/AppTheme.swift" \
   "$PROJECT_DIR/LightMD/Design/DesignSystem.swift" \
+  "$PROJECT_DIR/LightMD/Design/IconMetrics.swift" \
   "$PROJECT_DIR/LightMD/Design/MarkdownStyle.swift" \
+  "$PROJECT_DIR/LightMD/Views/Components/QuietIconButton.swift" \
+  "$PROJECT_DIR/LightMD/Views/Components/LightMDIcon.swift" \
   "$PROJECT_DIR/LightMD/Models/DocumentLocation.swift" \
   "$PROJECT_DIR/LightMD/Models/DocumentWindowRequest.swift" \
   "$PROJECT_DIR/LightMD/Models/FileTreeNode.swift" \

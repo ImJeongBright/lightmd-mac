@@ -97,10 +97,12 @@ struct OutlineSidebarView: View {
             Button {
                 viewModel.toggleFavoriteHeading(heading)
             } label: {
-                Image(systemName: viewModel.isFavoriteHeading(heading) ? "star.fill" : "star")
-                    .font(.system(size: 11))
-                    .foregroundStyle(viewModel.isFavoriteHeading(heading) ? colors.accent : colors.tertiaryText)
-                    .frame(width: 20, height: 20)
+                AppIcon(
+                    icon: viewModel.isFavoriteHeading(heading) ? .starFilled : .star,
+                    size: 11
+                )
+                .foregroundStyle(viewModel.isFavoriteHeading(heading) ? colors.accent : colors.tertiaryText)
+                .frame(width: 20, height: 20)
             }
             .buttonStyle(.plain)
             .help(viewModel.isFavoriteHeading(heading) ? "Remove favorite heading" : "Favorite heading")

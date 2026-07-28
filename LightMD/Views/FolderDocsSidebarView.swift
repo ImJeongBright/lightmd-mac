@@ -59,6 +59,7 @@ struct FolderDocsSidebarView: View {
 
     private func fileTreeNode(_ node: FileTreeNode, level: Int) -> AnyView {
         if node.isDirectory {
+            let isDirHovered = hoveredNodeID == node.id
             return AnyView(VStack(alignment: .leading, spacing: 2) {
                 Button {
                     toggleExpanded(node)
@@ -68,11 +69,6 @@ struct FolderDocsSidebarView: View {
                             .font(.system(size: 9, weight: .semibold))
                             .foregroundStyle(colors.tertiaryText)
                             .frame(width: 11)
-
-                        Image(systemName: isExpanded(node) ? "folder.fill" : "folder")
-                            .font(.system(size: 12))
-                            .foregroundStyle(colors.secondaryText)
-                            .frame(width: 16)
 
                         Text(node.name)
                             .font(.system(size: 13, weight: level == 0 ? .medium : .regular))
@@ -85,8 +81,15 @@ struct FolderDocsSidebarView: View {
                     .padding(.leading, CGFloat(level) * 12)
                     .padding(.horizontal, 7)
                     .padding(.vertical, 6)
+                    .background(
+                        RoundedRectangle(cornerRadius: IconMetrics.cornerRadius)
+                            .fill(isDirHovered ? colors.hoverBackground : Color.clear)
+                    )
                 }
                 .buttonStyle(.plain)
+                .onHover { hovering in
+                    hoveredNodeID = hovering ? node.id : nil
+                }
 
                 if isExpanded(node) {
                     ForEach(node.children) { child in
@@ -101,8 +104,7 @@ struct FolderDocsSidebarView: View {
                 viewModel.selectFile(node.url)
             } label: {
                 HStack(spacing: 7) {
-                    Image(systemName: "doc.text")
-                        .font(.system(size: 12))
+                    AppIcon(icon: .page, size: 12)
                         .foregroundStyle(isFileSelected ? colors.accent : colors.tertiaryText)
                         .frame(width: 16)
 
@@ -118,7 +120,7 @@ struct FolderDocsSidebarView: View {
                 .padding(.horizontal, 7)
                 .padding(.vertical, 7)
                 .background(
-                    RoundedRectangle(cornerRadius: 6)
+                    RoundedRectangle(cornerRadius: IconMetrics.cornerRadius)
                         .fill(isFileSelected ? colors.accentSoft : (isFileHovered ? colors.hoverBackground : Color.clear))
                 )
             }

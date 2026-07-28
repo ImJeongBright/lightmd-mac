@@ -1,5 +1,16 @@
 import Foundation
 
+enum PageIconType: String, Codable {
+    case emoji
+    case lineIcon
+    case none
+}
+
+struct PageIcon: Codable, Equatable {
+    var type: PageIconType
+    var value: String
+}
+
 struct SidecarMetadata: Codable {
     var filePath: String?
     var lastOpenedAt: Date?
@@ -8,6 +19,7 @@ struct SidecarMetadata: Codable {
     var note: String
     var lastViewedAt: Date?
     var annotations: [MarkdownAnnotation]
+    var pageIcon: PageIcon?
 
     init(
         filePath: String? = nil,
@@ -16,7 +28,8 @@ struct SidecarMetadata: Codable {
         favoriteHeadingIDs: [String] = [],
         note: String = "",
         lastViewedAt: Date? = nil,
-        annotations: [MarkdownAnnotation] = []
+        annotations: [MarkdownAnnotation] = [],
+        pageIcon: PageIcon? = nil
     ) {
         self.filePath = filePath
         self.lastOpenedAt = lastOpenedAt
@@ -25,6 +38,7 @@ struct SidecarMetadata: Codable {
         self.note = note
         self.lastViewedAt = lastViewedAt
         self.annotations = annotations
+        self.pageIcon = pageIcon
     }
 
     init(from decoder: Decoder) throws {
@@ -36,5 +50,6 @@ struct SidecarMetadata: Codable {
         note = try container.decodeIfPresent(String.self, forKey: .note) ?? ""
         lastViewedAt = try container.decodeIfPresent(Date.self, forKey: .lastViewedAt)
         annotations = try container.decodeIfPresent([MarkdownAnnotation].self, forKey: .annotations) ?? []
+        pageIcon = try container.decodeIfPresent(PageIcon.self, forKey: .pageIcon)
     }
 }

@@ -45,8 +45,7 @@ struct ReferencePaneView: View {
 
     private var header: some View {
         HStack(spacing: 8) {
-            Image(systemName: "sidebar.right")
-                .font(.system(size: 12, weight: .medium))
+            AppIcon(icon: .splitPane, size: 14)
                 .foregroundStyle(colors.accent)
 
             VStack(alignment: .leading, spacing: 1) {
@@ -64,42 +63,35 @@ struct ReferencePaneView: View {
 
             Spacer(minLength: 8)
 
-            HStack(spacing: 12) {
-                Button {
+            HStack(spacing: 4) {
+                QuietIconButton(
+                    icon: .chevronLeft,
+                    tooltip: "Go Back (Reference)",
+                    isDisabled: !viewModel.canNavigateReferenceBack,
+                    size: 12
+                ) {
                     viewModel.navigateReferenceBack()
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 11, weight: .semibold))
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(viewModel.canNavigateReferenceBack ? colors.primaryText : colors.tertiaryText)
-                .disabled(!viewModel.canNavigateReferenceBack)
-                .help("Go Back (Reference)")
 
-                Button {
+                QuietIconButton(
+                    icon: .chevronRight,
+                    tooltip: "Go Forward (Reference)",
+                    isDisabled: !viewModel.canNavigateReferenceForward,
+                    size: 12
+                ) {
                     viewModel.navigateReferenceForward()
-                } label: {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .semibold))
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(viewModel.canNavigateReferenceForward ? colors.primaryText : colors.tertiaryText)
-                .disabled(!viewModel.canNavigateReferenceForward)
-                .help("Go Forward (Reference)")
             }
 
             Spacer(minLength: 8)
 
-            Button {
+            QuietIconButton(
+                icon: .close,
+                tooltip: "Close Reference Pane",
+                size: 12
+            ) {
                 onClose()
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 11, weight: .semibold))
-                    .frame(width: 24, height: 24)
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(colors.secondaryText)
-            .help("Close Reference Pane")
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 9)

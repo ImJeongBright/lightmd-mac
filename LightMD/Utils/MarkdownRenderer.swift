@@ -11,12 +11,42 @@ struct MarkdownBlock: Identifiable, Hashable {
         case code(language: String?, text: String)
         case table(MarkdownTable)
         case divider
+        case frontmatter([FrontmatterField])
     }
 
     let id: String
     let kind: Kind
     let rawText: String
     let contentHash: String
+}
+
+struct FrontmatterField: Hashable, Identifiable {
+    let id: String
+    let key: String
+    let value: String
+    /// true if value is a YAML array like ["a", "b"]
+    let isArray: Bool
+    /// parsed array items if isArray
+    let arrayItems: [String]
+    
+    init(key: String, value: String) {
+        self.id = "fm-\(key)"
+        self.key = key
+        let trimmed = value.trimmingCharacters(in: .whitespaces)
+        // Detect YAML inline arrays: ["a", "b", "c"]
+        if trimmed.hasPrefix("[") && trimmed.hasSuffix("]") {
+            self.isArray = true
+            let inner = String(trimmed.dropFirst().dropLast())
+            self.arrayItems = inner
+                .split(separator: ",")
+                .map { $0.trimmingCharacters(in: .whitespaces).trimmingCharacters(in: CharacterSet(charactersIn: "\"'")) }
+            self.value = trimmed
+        } else {
+            self.isArray = false
+            self.arrayItems = []
+            self.value = trimmed
+        }
+    }
 }
 
 struct MarkdownListItem: Identifiable, Hashable {
@@ -58,6 +88,42 @@ enum MarkdownRenderer {
         var index = 0
         var headingIndex = 0
         var blockIndex = 0
+
+        // ── YAML Frontmatter detection ──
+        // Skip leading blank lines to find ---
+        var fmStart = 0
+        while fmStart < lines.count && lines[fmStart].trimmingCharacters(in: .whitespaces).isEmpty {
+            fmStart += 1
+        }
+        if fmStart < lines.count && lines[fmStart].trimmingCharacters(in: .whitespaces) == "---" {
+            var fmEnd = fmStart + 1
+            while fmEnd < lines.count {
+                if lines[fmEnd].trimmingCharacters(in: .whitespaces) == "---" {
+                    break
+                }
+                fmEnd += 1
+            }
+            if fmEnd < lines.count {
+                // Parse key: value pairs
+                var fields: [FrontmatterField] = []
+                for i in (fmStart + 1)..<fmEnd {
+                    let fmLine = lines[i]
+                    if let colonIdx = fmLine.firstIndex(of: ":") {
+                        let key = String(fmLine[..<colonIdx]).trimmingCharacters(in: .whitespaces)
+                        let value = String(fmLine[fmLine.index(after: colonIdx)...]).trimmingCharacters(in: .whitespaces)
+                        if !key.isEmpty {
+                            fields.append(FrontmatterField(key: key, value: value))
+                        }
+                    }
+                }
+                if !fields.isEmpty {
+                    let rawText = lines[fmStart...fmEnd].joined(separator: "\n")
+                    blocks.append(makeBlock(kind: .frontmatter(fields), rawText: rawText, index: blockIndex))
+                    blockIndex += 1
+                }
+                index = fmEnd + 1
+            }
+        }
 
         while index < lines.count {
             let line = lines[index]

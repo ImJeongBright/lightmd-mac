@@ -50,6 +50,26 @@ enum HTMLGenerator {
                     html += "</tr>\n"
                 }
                 html += "</tbody>\n</table>\n"
+            case let .frontmatter(fields):
+                html += "<div class=\"frontmatter-card\" \(idAttr)>\n"
+                for field in fields {
+                    html += "<div class=\"fm-row\">"
+                    html += "<span class=\"fm-key\">\(escapeHTML(field.key))</span>"
+                    if field.isArray {
+                        html += "<span class=\"fm-value\">"
+                        for item in field.arrayItems {
+                            html += "<span class=\"fm-tag\">\(escapeHTML(item))</span>"
+                        }
+                        html += "</span>"
+                    } else {
+                        let val = field.value
+                        // Color-code known status values
+                        let cssClass = statusCSSClass(for: field.key, value: val)
+                        html += "<span class=\"fm-value\"><span class=\"fm-badge\(cssClass)\">\(escapeHTML(val))</span></span>"
+                    }
+                    html += "</div>\n"
+                }
+                html += "</div>\n"
             }
         }
 
@@ -163,9 +183,89 @@ enum HTMLGenerator {
             .annotation-highlight { background-color: var(--highlight-bg); border-radius: 2px; }
             .annotation-underline { border-bottom: 2px solid var(--underline-color); }
             .annotation-memo      { background-color: var(--memo-bg); border-radius: 2px; }
+
+            /* ── Frontmatter card ── */
+            .frontmatter-card {
+                background: var(--surface-secondary);
+                border: 1px solid var(--border-color);
+                border-radius: 10px;
+                padding: 16px 20px;
+                margin-bottom: 24px;
+                font-size: 0.85em;
+            }
+            .fm-row {
+                display: flex;
+                align-items: flex-start;
+                gap: 10px;
+                padding: 5px 0;
+                border-bottom: 1px solid var(--divider-color);
+            }
+            .fm-row:last-child { border-bottom: none; }
+            .fm-key {
+                color: var(--text-secondary);
+                font-weight: 600;
+                min-width: 90px;
+                flex-shrink: 0;
+                font-size: 0.9em;
+                text-transform: uppercase;
+                letter-spacing: 0.03em;
+                padding-top: 2px;
+            }
+            .fm-value {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 5px;
+                align-items: center;
+            }
+            .fm-badge {
+                display: inline-block;
+                padding: 2px 8px;
+                border-radius: 5px;
+                font-size: 0.9em;
+                background: var(--code-bg);
+                color: var(--text-color);
+            }
+            .fm-badge.fm-status-active {
+                background: rgba(52, 199, 89, 0.15);
+                color: #34c759;
+            }
+            .fm-badge.fm-status-done, .fm-badge.fm-status-completed {
+                background: rgba(0, 122, 255, 0.15);
+                color: #007aff;
+            }
+            .fm-badge.fm-status-draft {
+                background: rgba(255, 159, 10, 0.15);
+                color: #ff9f0a;
+            }
+            .fm-badge.fm-status-archived {
+                background: rgba(142, 142, 147, 0.15);
+                color: #8e8e93;
+            }
+            .fm-tag {
+                display: inline-block;
+                padding: 2px 8px;
+                border-radius: 12px;
+                font-size: 0.85em;
+                background: var(--accent-soft);
+                color: var(--accent);
+                font-weight: 500;
+            }
         </style>
         """
         return css
+    }
+
+    private static func statusCSSClass(for key: String, value: String) -> String {
+        let k = key.lowercased()
+        guard k == "status" || k == "state" else { return "" }
+        let v = value.lowercased().trimmingCharacters(in: .whitespaces)
+        switch v {
+        case "active", "in-progress", "wip": return " fm-status-active"
+        case "done", "completed", "complete": return " fm-status-done"
+        case "draft", "pending", "todo": return " fm-status-draft"
+        case "archived", "deprecated", "inactive": return " fm-status-archived"
+        default: return ""
+        }
     }
 
     // MARK: - JavaScript

@@ -393,32 +393,32 @@ enum HTMLGenerator {
         }, 500);
     });
     
-    // WikiLink hover preview
+    // WikiLink hover preview — attach per-element to avoid bubbling issues
     var _hoverTimer = null;
-    document.addEventListener('mouseover', function(e) {
-        var a = e.target.closest('a.lightmd-wikilink');
-        if (!a) return;
-        clearTimeout(_hoverTimer);
-        _hoverTimer = setTimeout(function() {
-            var rect = a.getBoundingClientRect();
-            if (window.webkit && window.webkit.messageHandlers.wikiLinkHover) {
-                window.webkit.messageHandlers.wikiLinkHover.postMessage({
-                    url: a.href,
-                    x: e.screenX,
-                    y: e.screenY
-                });
-            }
-        }, 400);
-    });
-    document.addEventListener('mouseout', function(e) {
-        var a = e.target.closest('a.lightmd-wikilink');
-        if (!a) return;
-        if (e.relatedTarget && a.contains(e.relatedTarget)) return;
-        clearTimeout(_hoverTimer);
-        if (window.webkit && window.webkit.messageHandlers.wikiLinkHoverEnd) {
-            window.webkit.messageHandlers.wikiLinkHoverEnd.postMessage(null);
-        }
-    });
+    function _setupWikiLinkHover() {
+        var links = document.querySelectorAll('a.lightmd-wikilink');
+        links.forEach(function(a) {
+            if (a._wikiHoverBound) return;
+            a._wikiHoverBound = true;
+            a.addEventListener('mouseenter', function(ev) {
+                clearTimeout(_hoverTimer);
+                _hoverTimer = setTimeout(function() {
+                    if (window.webkit && window.webkit.messageHandlers.wikiLinkHover) {
+                        window.webkit.messageHandlers.wikiLinkHover.postMessage({
+                            url: a.href
+                        });
+                    }
+                }, 400);
+            });
+            a.addEventListener('mouseleave', function(ev) {
+                clearTimeout(_hoverTimer);
+                if (window.webkit && window.webkit.messageHandlers.wikiLinkHoverEnd) {
+                    window.webkit.messageHandlers.wikiLinkHoverEnd.postMessage(null);
+                }
+            });
+        });
+    }
+    _setupWikiLinkHover();
     </script>
     """
 

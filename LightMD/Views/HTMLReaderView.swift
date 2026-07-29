@@ -334,15 +334,11 @@ struct HTMLReaderView: NSViewRepresentable {
             case "wikiLinkHover":
                 if let dict = message.body as? [String: Any],
                    let urlStr = dict["url"] as? String,
-                   let url = URL(string: urlStr),
-                   let x = dict["x"] as? CGFloat,
-                   let y = dict["y"] as? CGFloat {
-                    print("[WikiLinkHover] Received hover event for URL: \(urlStr) at (\(x), \(y))")
+                   let url = URL(string: urlStr) {
+                    print("[WikiLinkHover] Received hover for: \(urlStr)")
                     DispatchQueue.main.async {
-                        self.showWikiLinkPreview(url: url, at: CGPoint(x: x, y: y))
+                        self.showWikiLinkPreview(url: url)
                     }
-                } else {
-                    print("[WikiLinkHover] Received hover event but missing data: \(message.body)")
                 }
             
             case "wikiLinkHoverEnd":
@@ -361,7 +357,7 @@ struct HTMLReaderView: NSViewRepresentable {
             }
         }
         
-        private func showWikiLinkPreview(url: URL, at point: CGPoint) {
+        private func showWikiLinkPreview(url: URL) {
             guard self.webView != nil else { return }
             print("[WikiLinkHover] Resolving URL: \(url)")
             
@@ -395,7 +391,6 @@ struct HTMLReaderView: NSViewRepresentable {
             }
             
             let title = fileURL.deletingPathExtension().lastPathComponent
-            // Extract first ~600 chars as preview
             let stripped = content
                 .replacingOccurrences(of: #"#+\s+"#, with: "", options: .regularExpression)
                 .replacingOccurrences(of: #"\*\*(.+?)\*\*"#, with: "$1", options: .regularExpression)
@@ -412,7 +407,7 @@ struct HTMLReaderView: NSViewRepresentable {
                 title: title,
                 at: mouseLoc,
                 appearance: parent.appearance,
-                colorScheme: .light // We'll handle colorScheme via appearance
+                colorScheme: .light
             )
         }
 

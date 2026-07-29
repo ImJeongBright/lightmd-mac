@@ -164,17 +164,10 @@ struct FolderDocsSidebarView: View {
     }
 
     private func expandRootNodes() {
-        expandedNodeIDs.formUnion(directoryIDs(in: viewModel.fileTree))
-    }
-
-    private func directoryIDs(in nodes: [FileTreeNode]) -> Set<String> {
-        Set(nodes.flatMap { node -> [String] in
-            guard node.isDirectory else {
-                return []
-            }
-
-            return [node.id] + Array(directoryIDs(in: node.children))
-        })
+        // Only expand root-level directories, not recursively all subdirectories
+        for node in viewModel.fileTree where node.isDirectory {
+            expandedNodeIDs.insert(node.id)
+        }
     }
     
     @ViewBuilder

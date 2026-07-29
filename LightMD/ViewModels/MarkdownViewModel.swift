@@ -211,38 +211,37 @@ final class MarkdownViewModel: ObservableObject {
     }
 
     func sync(with tab: WorkspaceTab, store: FolderTreeStore) {
+        let previousFolderURL = self.folderURL
         lastSyncedTabID = tab.id
         
         // 1. Ensure tree is loaded
         store.loadTree(for: tab.rootFolderURL)
         
-        // 2. Sync file tree and folder URL
+        // 2. Always update file tree and folder URL for this tab
         self.folderURL = tab.rootFolderURL
         self.fileTree = store.tree(for: tab.rootFolderURL) ?? []
         self.folderMarkdownFiles = store.files(for: tab.rootFolderURL) ?? []
         
-        // 2. Sync file index
+        // 3. Sync file index
         if let idx = store.index(for: tab.rootFolderURL) {
             self.fileIndex = idx
         }
         
-        // 3. Sync history
+        // 4. Sync navigation history per tab
         if historiesByTabID[tab.id] == nil {
             historiesByTabID[tab.id] = NavigationHistory()
         }
         self.navigationHistory = historiesByTabID[tab.id]!
         
-        // 4. Sync document
+        // 5. Sync document
+        let folderChanged = (previousFolderURL != tab.rootFolderURL)
         if let url = tab.selectedFileURL {
-            // Load without modifying history since it's just a tab switch
-            if document?.url != url {
+            // Reload if: different document OR same document but different folder
+            if document?.url != url || folderChanged {
                 loadDocument(from: url, preserveFolderContext: true, recordsHistory: false)
             }
-        } else if let firstFile = self.folderMarkdownFiles.first?.url {
-            // Auto-select first file if none selected
-            loadDocument(from: firstFile, preserveFolderContext: true, recordsHistory: false)
         } else {
-            // No file selected for this tab and no files available
+            // No file selected for this tab — clear document view
             document = nil
             outlineHeadings = []
             activeHeadingID = nil
@@ -251,7 +250,7 @@ final class MarkdownViewModel: ObservableObject {
             annotationStore.load([])
         }
         
-        // Setup folder monitor for current tab's folder
+        // 6. Setup folder monitor for current tab's folder
         setupFolderMonitor(for: tab.rootFolderURL, store: store)
     }
 

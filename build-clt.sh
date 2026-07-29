@@ -86,8 +86,7 @@ swiftc \
   "$PROJECT_DIR/LightMD/ViewModels/AnnotationLibraryViewModel.swift" \
   "$PROJECT_DIR/LightMD/Views/QuickOpenPanel.swift" \
   "$PROJECT_DIR/LightMD/Views/WorkspaceSearchPanel.swift" \
-  "$PROJECT_DIR/LightMD/Views/AnnotationLibraryView.swift" \
-  "$PROJECT_DIR/LightMD/Views/WikiLinkPreviewPanel.swift"
+  "$PROJECT_DIR/LightMD/Views/AnnotationLibraryView.swift"
 
 cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>

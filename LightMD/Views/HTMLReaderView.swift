@@ -28,8 +28,7 @@ struct HTMLReaderView: NSViewRepresentable {
         ucc.add(context.coordinator, name: "debugLog")
         ucc.add(context.coordinator, name: "contextMenuAction")
         ucc.add(context.coordinator, name: "scrollPosition")
-        ucc.add(context.coordinator, name: "wikiLinkHover")
-        ucc.add(context.coordinator, name: "wikiLinkHoverEnd")
+
         config.userContentController = ucc
 
         let webView = WKWebView(frame: .zero, configuration: config)
@@ -331,21 +330,6 @@ struct HTMLReaderView: NSViewRepresentable {
                     }
                 }
 
-            case "wikiLinkHover":
-                if let dict = message.body as? [String: Any],
-                   let urlStr = dict["url"] as? String,
-                   let url = URL(string: urlStr) {
-                    print("[WikiLinkHover] Received hover for: \(urlStr)")
-                    DispatchQueue.main.async {
-                        self.showWikiLinkPreview(url: url)
-                    }
-                }
-            
-            case "wikiLinkHoverEnd":
-                DispatchQueue.main.async {
-                    WikiLinkPreviewPanel.shared.hide()
-                }
-
             default:
                 break
             }
@@ -357,60 +341,6 @@ struct HTMLReaderView: NSViewRepresentable {
             }
         }
         
-        private func showWikiLinkPreview(url: URL) {
-            guard self.webView != nil else { return }
-            print("[WikiLinkHover] Resolving URL: \(url)")
-            
-            // Resolve URL from WikiLink scheme
-            var resolvedURL: URL? = nil
-            if url.scheme == "lightmd-wikilink" {
-                var rawTarget = url.absoluteString
-                if rawTarget.hasPrefix("lightmd-wikilink://") {
-                    rawTarget = String(rawTarget.dropFirst("lightmd-wikilink://".count))
-                } else if rawTarget.hasPrefix("lightmd-wikilink:") {
-                    rawTarget = String(rawTarget.dropFirst("lightmd-wikilink:".count))
-                }
-                // Strip anchor
-                if let hashIdx = rawTarget.firstIndex(of: "#") {
-                    rawTarget = String(rawTarget[..<hashIdx])
-                }
-                let targetPath = rawTarget.removingPercentEncoding ?? rawTarget
-                resolvedURL = parent.viewModel.fileIndex.resolveWikiLink(target: targetPath, currentFileURL: parent.viewModel.document?.url)
-            } else {
-                resolvedURL = url
-            }
-            
-            guard let fileURL = resolvedURL else {
-                print("[WikiLinkHover] Failed to resolve URL: \(url.absoluteString)")
-                return
-            }
-            
-            guard let content = try? String(contentsOf: fileURL, encoding: .utf8) else {
-                print("[WikiLinkHover] Failed to load content from file: \(fileURL.path)")
-                return
-            }
-            
-            let title = fileURL.deletingPathExtension().lastPathComponent
-            let stripped = content
-                .replacingOccurrences(of: #"#+\s+"#, with: "", options: .regularExpression)
-                .replacingOccurrences(of: #"\*\*(.+?)\*\*"#, with: "$1", options: .regularExpression)
-                .replacingOccurrences(of: #"\[(.+?)\]\(.+?\)"#, with: "$1", options: .regularExpression)
-                .replacingOccurrences(of: "[[", with: "")
-                .replacingOccurrences(of: "]]", with: "")
-            let preview = String(stripped.prefix(600))
-            
-            let mouseLoc = NSEvent.mouseLocation
-            print("[WikiLinkHover] Showing preview for \(title) at \(mouseLoc)")
-            
-            WikiLinkPreviewPanel.shared.show(
-                content: preview,
-                title: title,
-                at: mouseLoc,
-                appearance: parent.appearance,
-                colorScheme: .light
-            )
-        }
-
         private func applyColorToSelection(_ hex: String) {
             let id = UUID()
             let typeStr: AnnotationType = parent.viewModel.hasTextSelection ? .textColor : .underline

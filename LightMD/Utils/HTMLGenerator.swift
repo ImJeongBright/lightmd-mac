@@ -493,32 +493,7 @@ enum HTMLGenerator {
         }, 500);
     });
     
-    // WikiLink hover preview — attach per-element to avoid bubbling issues
-    var _hoverTimer = null;
-    function _setupWikiLinkHover() {
-        var links = document.querySelectorAll('a.lightmd-wikilink');
-        links.forEach(function(a) {
-            if (a._wikiHoverBound) return;
-            a._wikiHoverBound = true;
-            a.addEventListener('mouseenter', function(ev) {
-                clearTimeout(_hoverTimer);
-                _hoverTimer = setTimeout(function() {
-                    if (window.webkit && window.webkit.messageHandlers.wikiLinkHover) {
-                        window.webkit.messageHandlers.wikiLinkHover.postMessage({
-                            url: a.href
-                        });
-                    }
-                }, 400);
-            });
-            a.addEventListener('mouseleave', function(ev) {
-                clearTimeout(_hoverTimer);
-                if (window.webkit && window.webkit.messageHandlers.wikiLinkHoverEnd) {
-                    window.webkit.messageHandlers.wikiLinkHoverEnd.postMessage(null);
-                }
-            });
-        });
-    }
-    _setupWikiLinkHover();
+    
     </script>
     """
 

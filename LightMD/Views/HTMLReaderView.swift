@@ -337,9 +337,12 @@ struct HTMLReaderView: NSViewRepresentable {
                    let url = URL(string: urlStr),
                    let x = dict["x"] as? CGFloat,
                    let y = dict["y"] as? CGFloat {
+                    print("[WikiLinkHover] Received hover event for URL: \(urlStr) at (\(x), \(y))")
                     DispatchQueue.main.async {
                         self.showWikiLinkPreview(url: url, at: CGPoint(x: x, y: y))
                     }
+                } else {
+                    print("[WikiLinkHover] Received hover event but missing data: \(message.body)")
                 }
             
             case "wikiLinkHoverEnd":
@@ -360,6 +363,7 @@ struct HTMLReaderView: NSViewRepresentable {
         
         private func showWikiLinkPreview(url: URL, at point: CGPoint) {
             guard self.webView != nil else { return }
+            print("[WikiLinkHover] Resolving URL: \(url)")
             
             // Resolve URL from WikiLink scheme
             var resolvedURL: URL? = nil
@@ -380,8 +384,15 @@ struct HTMLReaderView: NSViewRepresentable {
                 resolvedURL = url
             }
             
-            guard let fileURL = resolvedURL,
-                  let content = try? String(contentsOf: fileURL, encoding: .utf8) else { return }
+            guard let fileURL = resolvedURL else {
+                print("[WikiLinkHover] Failed to resolve URL: \(url.absoluteString)")
+                return
+            }
+            
+            guard let content = try? String(contentsOf: fileURL, encoding: .utf8) else {
+                print("[WikiLinkHover] Failed to load content from file: \(fileURL.path)")
+                return
+            }
             
             let title = fileURL.deletingPathExtension().lastPathComponent
             // Extract first ~600 chars as preview
@@ -394,6 +405,7 @@ struct HTMLReaderView: NSViewRepresentable {
             let preview = String(stripped.prefix(600))
             
             let mouseLoc = NSEvent.mouseLocation
+            print("[WikiLinkHover] Showing preview for \(title) at \(mouseLoc)")
             
             WikiLinkPreviewPanel.shared.show(
                 content: preview,

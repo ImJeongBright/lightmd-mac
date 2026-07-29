@@ -413,6 +413,7 @@ enum HTMLGenerator {
     document.addEventListener('mouseout', function(e) {
         var a = e.target.closest('a.lightmd-wikilink');
         if (!a) return;
+        if (e.relatedTarget && a.contains(e.relatedTarget)) return;
         clearTimeout(_hoverTimer);
         if (window.webkit && window.webkit.messageHandlers.wikiLinkHoverEnd) {
             window.webkit.messageHandlers.wikiLinkHoverEnd.postMessage(null);

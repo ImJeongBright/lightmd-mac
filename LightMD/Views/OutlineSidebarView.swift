@@ -38,9 +38,9 @@ struct OutlineSidebarView: View {
                 .fill(colors.divider)
                 .frame(width: 1)
         }
-        .onAppear { refreshBacklinks() }
-        .onChange(of: viewModel.document?.url) { _ in refreshBacklinks() }
-        .onChange(of: viewModel.fileIndex.isReady) { _ in refreshBacklinks() }
+        .onAppear { refreshBacklinks(with: viewModel.fileIndex) }
+        .onChange(of: viewModel.document?.url) { _ in refreshBacklinks(with: viewModel.fileIndex) }
+        .onReceive(viewModel.$fileIndex) { newIndex in refreshBacklinks(with: newIndex) }
     }
     
     // MARK: - Outline
@@ -191,12 +191,12 @@ struct OutlineSidebarView: View {
         }
     }
     
-    private func refreshBacklinks() {
+    private func refreshBacklinks(with index: MarkdownFileIndex) {
         guard let docURL = viewModel.document?.url else {
             backlinks = []
             return
         }
-        backlinks = viewModel.fileIndex.backlinks(for: docURL)
+        backlinks = index.backlinks(for: docURL)
     }
 }
 

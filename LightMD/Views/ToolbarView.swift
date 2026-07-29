@@ -203,15 +203,7 @@ struct ToolbarView: View {
                 if viewModel.canSave {
                     Button("Save") { viewModel.save() }
                 }
-                Divider()
-                Picker("Theme", selection: $selectedThemeRaw) {
-                    ForEach(AppTheme.allCases) { theme in
-                        Text(theme.title).tag(theme.rawValue)
-                    }
-                }
-                Button("Appearance Settings…") {
-                    AppearanceWindowController.shared.show(appearance: appearance)
-                }
+
             } label: {
                 AppIcon(icon: .more, size: IconMetrics.toolbarSize)
                     .frame(width: IconMetrics.controlFrame, height: IconMetrics.controlFrame)

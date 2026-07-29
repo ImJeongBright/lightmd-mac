@@ -100,6 +100,7 @@ final class MarkdownViewModel: ObservableObject {
     
     // Tab State Management
     private var historiesByTabID: [UUID: NavigationHistory] = [:]
+    private var referencePanesByTabID: [UUID: ReaderPaneState] = [:]
     private var lastSyncedTabID: UUID?
     
     // Callback to WorkspaceViewModel to update selectedFileURL
@@ -212,6 +213,9 @@ final class MarkdownViewModel: ObservableObject {
 
     func sync(with tab: WorkspaceTab, store: FolderTreeStore) {
         let previousFolderURL = self.folderURL
+        if let lastTab = lastSyncedTabID {
+            referencePanesByTabID[lastTab] = self.referencePane
+        }
         lastSyncedTabID = tab.id
         
         // 1. Ensure tree is loaded
@@ -249,6 +253,9 @@ final class MarkdownViewModel: ObservableObject {
             sidecarMetadata = SidecarMetadata()
             annotationStore.load([])
         }
+        
+        // 5.5 Sync reference pane
+        self.referencePane = referencePanesByTabID[tab.id]
         
         // 6. Setup folder monitor for current tab's folder
         setupFolderMonitor(for: tab.rootFolderURL, store: store)

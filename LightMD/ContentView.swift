@@ -256,12 +256,12 @@ struct ContentView: View {
             if let referencePane = viewModel.referencePane {
                 HSplitView {
                     mainReader
-                        .frame(minWidth: 420)
+                        .frame(minWidth: 320, maxWidth: .infinity)
 
                     ReferencePaneView(pane: referencePane) {
                         viewModel.closeReferencePane()
                     }
-                    .frame(minWidth: 320, idealWidth: 460)
+                    .frame(minWidth: 320, maxWidth: .infinity)
                     .environment(\.openURL, OpenURLAction { url in
                         viewModel.handleLink(url, from: .reference) { request in
                             openWindow(value: request)

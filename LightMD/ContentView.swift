@@ -250,23 +250,59 @@ struct ContentView: View {
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isOutlineVisible)
     }
 
+    @AppStorage("ReferencePaneWidth") private var referencePaneWidth: Double = 460
+    @State private var referencePaneDragStartWidth: Double?
+
     @ViewBuilder
     private var centerPane: some View {
         if viewModel.mode == .reader {
             if let referencePane = viewModel.referencePane {
-                HSplitView {
+                HStack(spacing: 0) {
                     mainReader
-                        .frame(minWidth: 320, maxWidth: .infinity)
+                        .frame(maxWidth: .infinity)
+
+                    // Custom Drag Handle
+                    ZStack {
+                        Divider()
+                        Color.clear
+                            .frame(width: 8)
+                            .contentShape(Rectangle())
+                            .onHover { isHovering in
+                                if isHovering {
+                                    NSCursor.resizeLeftRight.push()
+                                } else {
+                                    NSCursor.pop()
+                                }
+                            }
+                            .gesture(
+                                DragGesture()
+                                    .onChanged { value in
+                                        if referencePaneDragStartWidth == nil {
+                                            referencePaneDragStartWidth = referencePaneWidth
+                                        }
+                                        if let start = referencePaneDragStartWidth {
+                                            // value.translation.width is positive when dragging right
+                                            // we want right pane to shrink when dragging right
+                                            let newWidth = start - value.translation.width
+                                            referencePaneWidth = max(250, min(newWidth, 1200))
+                                        }
+                                    }
+                                    .onEnded { _ in
+                                        referencePaneDragStartWidth = nil
+                                    }
+                            )
+                    }
+                    .frame(width: 1)
+                    .zIndex(1)
 
                     ReferencePaneView(pane: referencePane) {
                         viewModel.closeReferencePane()
                     }
-                    .frame(minWidth: 320, maxWidth: .infinity)
+                    .frame(width: referencePaneWidth)
                     .environment(\.openURL, OpenURLAction { url in
                         viewModel.handleLink(url, from: .reference) { request in
                             openWindow(value: request)
                         }
-
                         return .handled
                     })
                 }

@@ -244,6 +244,9 @@ final class MarkdownViewModel: ObservableObject {
             if document?.url != url || folderChanged {
                 loadDocument(from: url, preserveFolderContext: true, recordsHistory: false)
             }
+        } else if let firstFile = self.folderMarkdownFiles.first?.url {
+            // Auto-select first file if none selected
+            loadDocument(from: firstFile, preserveFolderContext: true, recordsHistory: false)
         } else {
             // No file selected for this tab — clear document view
             document = nil

@@ -66,4 +66,47 @@ final class GitStatusService {
         }
         return false
     }
+    
+    static func getDiff(for fileURL: URL, in workspaceURL: URL) -> String? {
+        guard isGitRepository(at: workspaceURL) else { return nil }
+        
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+        process.arguments = ["diff", "HEAD", "--", fileURL.path]
+        process.currentDirectoryURL = workspaceURL
+        
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        
+        do {
+            try process.run()
+            process.waitUntilExit()
+            
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            if let output = String(data: data, encoding: .utf8), !output.isEmpty {
+                return output
+            }
+            
+            // If empty, it might be an untracked file or newly added without commits yet.
+            // Let's try git diff without HEAD just in case it's staged
+            let stagedProcess = Process()
+            stagedProcess.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+            stagedProcess.arguments = ["diff", "--cached", "--", fileURL.path]
+            stagedProcess.currentDirectoryURL = workspaceURL
+            
+            let stagedPipe = Pipe()
+            stagedProcess.standardOutput = stagedPipe
+            try stagedProcess.run()
+            stagedProcess.waitUntilExit()
+            
+            let stagedData = stagedPipe.fileHandleForReading.readDataToEndOfFile()
+            if let stagedOutput = String(data: stagedData, encoding: .utf8), !stagedOutput.isEmpty {
+                return stagedOutput
+            }
+            
+            return nil
+        } catch {
+            return nil
+        }
+    }
 }

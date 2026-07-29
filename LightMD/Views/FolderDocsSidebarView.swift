@@ -137,6 +137,20 @@ struct FolderDocsSidebarView: View {
                 hoveredNodeID = hovering ? node.id : nil
             }
             .contextMenu {
+                if node.gitStatus == .modified || node.gitStatus == .added || node.gitStatus == .untracked {
+                    Button("Diff 보기") {
+                        if let diff = GitStatusService.getDiff(for: node.url, in: viewModel.folderURL ?? node.url.deletingLastPathComponent()) {
+                            GitDiffPanel.shared.show(
+                                diff: diff,
+                                fileName: node.name,
+                                appearance: appearance,
+                                colorScheme: colorScheme
+                            )
+                        }
+                    }
+                    Divider()
+                }
+                
                 Button("오른쪽 창에서 열기") {
                     viewModel.openInRightPane(node.url)
                 }

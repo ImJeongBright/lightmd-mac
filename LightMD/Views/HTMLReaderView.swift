@@ -62,8 +62,11 @@ struct HTMLReaderView: NSViewRepresentable {
         if context.coordinator.lastAppearance != currentAppearance {
             context.coordinator.lastAppearance = currentAppearance
             let cssVars = HTMLGenerator.generateCSSVars(for: currentAppearance)
-            let safeJS = "var styleEl = document.getElementById('lightmd-theme-vars'); if (styleEl) { styleEl.innerHTML = `" + cssVars.replacingOccurrences(of: "`", with: "\\`") + "`; }"
-            webView.evaluateJavaScript(safeJS, completionHandler: nil)
+            let cssVarsJS = "var styleEl = document.getElementById('lightmd-theme-vars'); if (styleEl) { styleEl.innerHTML = `" + cssVars.replacingOccurrences(of: "`", with: "\\`") + "`; }"
+            let contentWidthCSS = currentAppearance.contentWidth.cssValue
+            let directStyleJS = "document.body.style.maxWidth = '\(contentWidthCSS)'; document.body.style.fontSize = '\(currentAppearance.fontSizeBase)px'; document.body.style.lineHeight = '\(currentAppearance.lineSpacing.cssValue)';"
+            webView.evaluateJavaScript(cssVarsJS, completionHandler: nil)
+            webView.evaluateJavaScript(directStyleJS, completionHandler: nil)
         }
 
         guard context.coordinator.didFinishLoading else { return }
